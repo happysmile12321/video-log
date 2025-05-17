@@ -1,13 +1,34 @@
+import { useEffect } from 'react';
 import { useFeishuJSSDK } from '@/hooks/useFeishuJSSDK';
 import { useFeishuDebugger } from '@/hooks/useFeishuDebugger';
 import { useVConsole } from '@/hooks/useVConsole';
+import { useFeishuLogin } from '@/hooks/useFeishuLogin';
 import type { FeishuSDKResponse, FeishuSDKError } from '@/types/feishu';
 
 export const FeishuSDKExample = () => {
   const { sdkReady, isFeishuEnv } = useFeishuJSSDK();
   const { debuggerReady } = useFeishuDebugger();
   const { vConsoleReady } = useVConsole();
+  const { userCode, error } = useFeishuLogin(sdkReady);
 
+  useEffect(() => {
+    if (sdkReady && isFeishuEnv && typeof window !== 'undefined') {
+      // 示例：初始化SDK
+      window.h5sdk.init({
+        appId: 'cli_a8a291fcee78d00c', // 替换为你的飞书应用 ID
+        timestamp: Date.now(),
+        nonceStr: 'random_string', // 替换为随机字符串
+        signature: 'YOUR_SIGNATURE', // 替换为你的签名
+        jsApiList: ['getContext', 'openLink'], // 需要使用的 JSAPI 列表
+        onSuccess: function(res: FeishuSDKResponse) {
+          console.log('SDK初始化成功', res);
+        },
+        onFail: function(err: FeishuSDKError) {
+          console.error('SDK初始化失败', err);
+        },
+      });
+    }
+  }, [sdkReady, isFeishuEnv]);
 
   const handleOpenLink = () => {
     if (sdkReady && isFeishuEnv && window.h5sdk) {
@@ -46,10 +67,17 @@ export const FeishuSDKExample = () => {
           <p>调试工具状态: {debuggerReady ? '已加载' : '加载中...'}</p>
           <p>运行环境: {isFeishuEnv ? '飞书客户端' : '非飞书环境'}</p>
           <p>VConsole状态: {vConsoleReady ? '已加载' : '加载中...'}</p>
+          <p>登录状态: {userCode ? '已登录' : '未登录'}</p>
+          {error && (
+            <p className="text-red-500">登录错误: {error}</p>
+          )}
+          {userCode && (
+            <p className="text-green-500">授权码: {userCode}</p>
+          )}
         </div>
         <button
           onClick={handleOpenLink}
-          disabled={!sdkReady || !isFeishuEnv}
+          disabled={!sdkReady || !isFeishuEnv || !userCode}
           className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
         >
           打开链接
