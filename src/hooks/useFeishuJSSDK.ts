@@ -18,11 +18,10 @@ export const useFeishuJSSDK = () => {
     if (typeof window === 'undefined') return false;
     
     // 检查是否在飞书PC客户端中
-    const isPcClient = !!window.__pc_bridge__;
-    // 检查是否在飞书移动端中
-    const isMobileClient = !!window.tt;
+    //@ts-ignore
+    const isPcClient = window.LarkWebViewJavaScriptBridge != null;
     
-    return isPcClient || isMobileClient;
+    return isPcClient;
   };
 
   useEffect(() => {
