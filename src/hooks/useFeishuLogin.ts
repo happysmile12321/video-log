@@ -22,7 +22,8 @@ export const useFeishuLogin = (sdkReady: boolean, vConsoleReady: boolean) => {
     }
 
     // 如果没有code，调用requestAuthCode
-    window.tt?.requestAuthCode({
+    window.tt?.requestAccess({
+      scopeList: ["offline_access"],
       appId: 'cli_a8a291fcee78d00c', // 替换为你的应用 ID
       success: (res: LoginResponse) => {
         setUserCode(res.code);
