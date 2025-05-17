@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useFeishuJSSDK } from '@/hooks/useFeishuJSSDK';
 import { useFeishuDebugger } from '@/hooks/useFeishuDebugger';
 import type { FeishuSDKResponse, FeishuSDKError } from '@/types/feishu';
