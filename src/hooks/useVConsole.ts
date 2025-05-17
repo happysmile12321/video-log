@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import type { VConsoleConstructor, VConsoleInstance } from '@/types/vconsole';
 
 declare global {
   interface Window {
-    VConsole: any;
-    vConsole: any;
+    VConsole: VConsoleConstructor;
+    vConsole: VConsoleInstance;
   }
 }
 
@@ -18,7 +19,10 @@ export const useVConsole = () => {
       
       script.onload = () => {
         // 初始化 VConsole
-        const vConsole = new window.VConsole();
+        const vConsole = new window.VConsole({
+          theme: 'dark',
+          maxLogNumber: 1000
+        });
         window.vConsole = vConsole;
         setVConsoleReady(true);
       };
