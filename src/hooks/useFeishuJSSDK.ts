@@ -18,7 +18,7 @@ export const useFeishuJSSDK = () => {
     if (typeof window === 'undefined') return false;
     
     // 检查是否在飞书PC客户端中
-    //@ts-ignore
+    //@ts-expect-error
     const isPcClient = window.LarkWebViewJavaScriptBridge != null;
     
     return isPcClient;
