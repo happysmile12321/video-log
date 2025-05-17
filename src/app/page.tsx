@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 import { FeishuSDKExample } from '@/components/FeishuSDKExample';
@@ -8,13 +8,28 @@ import { FeishuSDKExample } from '@/components/FeishuSDKExample';
 export default function Home() {
   const { userInfo } = useUser();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 如果已经有用户信息，自动跳转到仪表板
-    if (userInfo) {
-      router.push('/dashboard');
+    // 确保代码只在客户端运行
+    if (typeof window !== 'undefined') {
+      if (userInfo) {
+        router.replace('/dashboard');
+      }
+      setIsLoading(false);
     }
   }, [userInfo, router]);
+
+  // 显示加载状态
+  if (isLoading) {
+    return (
+      <main className="min-h-screen p-24 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen p-24">
