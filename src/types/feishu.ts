@@ -10,6 +10,13 @@ export interface FeishuSDKError {
   data?: unknown;
 }
 
+export interface FeishuLoginError {
+  errCode: number;
+  errMsg: string;
+  errno: number;
+  errString: string;
+}
+
 export interface FeishuSDKInitOptions {
   appId: string;
   timestamp: number;
@@ -26,6 +33,12 @@ export interface FeishuOpenLinkOptions {
   onFail?: (err: FeishuSDKError) => void;
 }
 
+export interface RequestAuthCodeOptions {
+  appId: string;
+  success: (res: { code: string }) => void;
+  fail: (error: FeishuLoginError) => void;
+}
+
 export interface FeishuSDK {
   init: (options: FeishuSDKInitOptions) => void;
   openLink: (options: FeishuOpenLinkOptions) => void;
@@ -33,12 +46,6 @@ export interface FeishuSDK {
 
 export interface FeishuBridge {
   call: (method: string, ...args: unknown[]) => void;
-}
-
-export interface RequestAuthCodeOptions {
-  appId: string;
-  success: (res: { code: string }) => void;
-  fail: (error: FeishuSDKError) => void;
 }
 
 export interface FeishuTT {

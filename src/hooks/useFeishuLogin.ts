@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { FeishuSDKError } from '@/types/feishu';
+import type { FeishuLoginError } from '@/types/feishu';
 
 interface LoginResponse {
   code: string;
@@ -27,9 +27,19 @@ export const useFeishuLogin = (sdkReady: boolean, vConsoleReady: boolean) => {
       success: (res: LoginResponse) => {
         setUserCode(res.code);
       },
-      fail: (err: FeishuSDKError) => {
-        setError(err.message);
-        console.error('登录失败:', err);
+      fail: (err: FeishuLoginError) => {
+        // 处理重定向URL未配置的错误
+        if (err.errno === 2602002 || err.errCode === 2602002) {
+          const redirectUrl = window.location.origin;
+          setError(`请在飞书开放平台配置以下重定向URL：${redirectUrl}`);
+          console.error('登录失败: 需要配置重定向URL', {
+            error: err,
+            requiredRedirectUrl: redirectUrl
+          });
+        } else {
+          setError(err.errMsg || err.errString || '登录失败');
+          console.error('登录失败:', err);
+        }
       },
     });
   }, [sdkReady, vConsoleReady]);
