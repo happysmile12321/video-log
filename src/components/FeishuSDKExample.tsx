@@ -2,13 +2,16 @@ import { useFeishuJSSDK } from '@/hooks/useFeishuJSSDK';
 import { useFeishuDebugger } from '@/hooks/useFeishuDebugger';
 import { useVConsole } from '@/hooks/useVConsole';
 import { useFeishuLogin } from '@/hooks/useFeishuLogin';
+import { useUser } from '@/contexts/UserContext';
 import type { FeishuSDKResponse, FeishuSDKError } from '@/types/feishu';
+import Image from 'next/image';
 
 export const FeishuSDKExample = () => {
   const { vConsoleReady } = useVConsole();
   const { sdkReady, isFeishuEnv } = useFeishuJSSDK(vConsoleReady);
   const { debuggerReady } = useFeishuDebugger(vConsoleReady);
   const { userCode, error } = useFeishuLogin(sdkReady, vConsoleReady);
+  const { userInfo } = useUser();
 
   const handleOpenLink = () => {
     if (sdkReady && isFeishuEnv && window.h5sdk) {
@@ -51,8 +54,25 @@ export const FeishuSDKExample = () => {
           {error && (
             <p className="text-red-500">登录错误: {error}</p>
           )}
-          {userCode && (
-            <p className="text-green-500">授权码: {userCode}</p>
+          {userInfo && (
+            <div className="bg-white rounded-lg shadow p-4 mt-4">
+              <div className="flex items-center space-x-4">
+                <div className="relative w-16 h-16">
+                  <Image
+                    src={userInfo.avatar_middle}
+                    alt={userInfo.name}
+                    fill
+                    className="rounded-full"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold">{userInfo.name}</h2>
+                  <p className="text-gray-600">{userInfo.en_name}</p>
+                  {userInfo.email && <p className="text-gray-500">{userInfo.email}</p>}
+                  {userInfo.mobile && <p className="text-gray-500">{userInfo.mobile}</p>}
+                </div>
+              </div>
+            </div>
           )}
         </div>
         <button
