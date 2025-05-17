@@ -49,7 +49,7 @@ export interface FeishuBridge {
 }
 
 export interface RequestAccessOptions {
-  appId: string;
+  appID : string;
   scopeList: string[];
   success: (res: { code: string }) => void;
   fail: (error: FeishuLoginError) => void;
