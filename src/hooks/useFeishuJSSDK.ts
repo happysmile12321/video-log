@@ -11,24 +11,11 @@ declare global {
 
 export const useFeishuJSSDK = () => {
   const [sdkReady, setSdkReady] = useState(false);
-  const [isFeishuEnv, setIsFeishuEnv] = useState(false);
 
-  // 检查是否在飞书环境中
-  const checkFeishuEnvironment = () => {
-    if (typeof window === 'undefined') return false;
-    // 检查是否在飞书PC客户端中
-    const isPcClient = 'LarkWebViewJavaScriptBridge' in window;
-    
-    return isPcClient;
-  };
+ 
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // 首先检查环境
-      const isFeishu = checkFeishuEnvironment();
-      setIsFeishuEnv(isFeishu);
-
-      if (!window.h5sdk) {
         const script = document.createElement('script');
         script.type = 'text/javascript';
         script.src = 'https://lf-scm-cn.feishucdn.com/lark/op/h5-js-sdk-1.5.38.js';
@@ -51,8 +38,7 @@ export const useFeishuJSSDK = () => {
       } else {
         setSdkReady(true);
       }
-    }
   }, []);
 
-  return { sdkReady, isFeishuEnv };
+  return { sdkReady };
 }; 
