@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { useFeishuJSSDK } from '@/hooks/useFeishuJSSDK';
+import { useFeishuDebugger } from '@/hooks/useFeishuDebugger';
 
 export const FeishuSDKExample = () => {
   const { sdkReady } = useFeishuJSSDK();
+  const { debuggerReady } = useFeishuDebugger();
 
   useEffect(() => {
     if (sdkReady && typeof window !== 'undefined') {
@@ -41,7 +43,10 @@ export const FeishuSDKExample = () => {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">飞书JSSDK示例</h1>
       <div className="space-y-4">
-        <p>SDK状态: {sdkReady ? '已加载' : '加载中...'}</p>
+        <div className="space-y-2">
+          <p>SDK状态: {sdkReady ? '已加载' : '加载中...'}</p>
+          <p>调试工具状态: {debuggerReady ? '已加载' : '加载中...'}</p>
+        </div>
         <button
           onClick={handleOpenLink}
           disabled={!sdkReady}
