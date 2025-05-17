@@ -18,7 +18,7 @@ export const useFeishuJSSDK = () => {
     if (typeof window !== 'undefined') {
         const script = document.createElement('script');
         script.type = 'text/javascript';
-        script.src = 'https://lf-scm-cn.feishucdn.com/lark/op/h5-js-sdk-1.5.38.js';
+        script.src = 'https://lf1-cdn-tos.bytegoofy.com/goofy/lark/op/h5-js-sdk-1.5.26.js';
         script.async = true;
         
         script.onload = () => {
