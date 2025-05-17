@@ -3,33 +3,58 @@ import { useEffect, useState } from 'react';
 declare global {
   interface Window {
     h5sdk: any;
+    __pc_bridge__: any;
+    tt: any;
   }
 }
 
 export const useFeishuJSSDK = () => {
   const [sdkReady, setSdkReady] = useState(false);
+  const [isFeishuEnv, setIsFeishuEnv] = useState(false);
+
+  // 检查是否在飞书环境中
+  const checkFeishuEnvironment = () => {
+    if (typeof window === 'undefined') return false;
+    
+    // 检查是否在飞书PC客户端中
+    const isPcClient = !!window.__pc_bridge__;
+    // 检查是否在飞书移动端中
+    const isMobileClient = !!window.tt;
+    
+    return isPcClient || isMobileClient;
+  };
 
   useEffect(() => {
-    // 检查SDK是否已经加载
-    if (typeof window !== 'undefined' && !window.h5sdk) {
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = 'https://lf-scm-cn.feishucdn.com/lark/op/h5-js-sdk-1.5.38.js';
-      script.async = true;
-      
-      script.onload = () => {
+    if (typeof window !== 'undefined') {
+      // 首先检查环境
+      const isFeishu = checkFeishuEnvironment();
+      setIsFeishuEnv(isFeishu);
+
+      if (!window.h5sdk) {
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = 'https://lf-scm-cn.feishucdn.com/lark/op/h5-js-sdk-1.5.38.js';
+        script.async = true;
+        
+        script.onload = () => {
+          setSdkReady(true);
+        };
+
+        script.onerror = (error) => {
+          console.error('Failed to load Feishu JSSDK:', error);
+          setSdkReady(false);
+        };
+
+        document.body.appendChild(script);
+
+        return () => {
+          document.body.removeChild(script);
+        };
+      } else {
         setSdkReady(true);
-      };
-
-      document.body.appendChild(script);
-
-      return () => {
-        document.body.removeChild(script);
-      };
-    } else if (typeof window !== 'undefined' && window.h5sdk) {
-      setSdkReady(true);
+      }
     }
   }, []);
 
-  return { sdkReady };
+  return { sdkReady, isFeishuEnv };
 }; 
