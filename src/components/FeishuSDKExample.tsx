@@ -7,24 +7,6 @@ export const FeishuSDKExample = () => {
   const { sdkReady } = useFeishuJSSDK();
   const { debuggerReady } = useFeishuDebugger();
 
-  useEffect(() => {
-    if (sdkReady && typeof window !== 'undefined') {
-      // 示例：初始化SDK
-      window.h5sdk.init({
-        appId: 'YOUR_APP_ID', // 替换为你的飞书应用 ID
-        timestamp: Date.now(),
-        nonceStr: 'random_string', // 替换为随机字符串
-        signature: 'YOUR_SIGNATURE', // 替换为你的签名
-        jsApiList: ['getContext', 'openLink'], // 需要使用的 JSAPI 列表
-        onSuccess: function(res: FeishuSDKResponse) {
-          console.log('SDK初始化成功', res);
-        },
-        onFail: function(err: FeishuSDKError) {
-          console.error('SDK初始化失败', err);
-        },
-      });
-    }
-  }, [sdkReady]);
 
   const handleOpenLink = () => {
     if (sdkReady) {
