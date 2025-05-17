@@ -5,12 +5,12 @@ interface LoginResponse {
   code: string;
 }
 
-export const useFeishuLogin = (sdkReady: boolean) => {
+export const useFeishuLogin = (sdkReady: boolean, vConsoleReady: boolean) => {
   const [userCode, setUserCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!sdkReady) return;
+    if (!sdkReady || !vConsoleReady) return;
 
     // 获取URL中的code参数
     const urlParams = new URLSearchParams(window.location.search);
@@ -32,7 +32,7 @@ export const useFeishuLogin = (sdkReady: boolean) => {
         console.error('登录失败:', err);
       },
     });
-  }, [sdkReady]);
+  }, [sdkReady, vConsoleReady]);
 
   return { userCode, error };
 }; 

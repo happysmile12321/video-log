@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 
-export const useFeishuDebugger = () => {
+export const useFeishuDebugger = (vConsoleReady: boolean) => {
   const [debuggerReady, setDebuggerReady] = useState(false);
 
   useEffect(() => {
+    if (!vConsoleReady) return;
+
     if (typeof window !== 'undefined') {
       const script = document.createElement('script');
       script.src = 'https://lf-package-cn.feishucdn.com/obj/feishu-static/op/fe/devtools_frontend/remote-debug-0.0.1-alpha.6.js';
@@ -19,7 +21,7 @@ export const useFeishuDebugger = () => {
         document.body.removeChild(script);
       };
     }
-  }, []);
+  }, [vConsoleReady]);
 
   return { debuggerReady };
 }; 

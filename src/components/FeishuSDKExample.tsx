@@ -6,10 +6,9 @@ import type { FeishuSDKResponse, FeishuSDKError } from '@/types/feishu';
 
 export const FeishuSDKExample = () => {
   const { vConsoleReady } = useVConsole();
-  const { sdkReady, isFeishuEnv } = useFeishuJSSDK();
-  const { debuggerReady } = useFeishuDebugger();
-  const { userCode, error } = useFeishuLogin(sdkReady);
-
+  const { sdkReady, isFeishuEnv } = useFeishuJSSDK(vConsoleReady);
+  const { debuggerReady } = useFeishuDebugger(vConsoleReady);
+  const { userCode, error } = useFeishuLogin(sdkReady, vConsoleReady);
 
   const handleOpenLink = () => {
     if (sdkReady && isFeishuEnv && window.h5sdk) {
@@ -44,10 +43,10 @@ export const FeishuSDKExample = () => {
       <h1 className="text-2xl font-bold mb-4">飞书JSSDK示例</h1>
       <div className="space-y-4">
         <div className="space-y-2">
+          <p>VConsole状态: {vConsoleReady ? '已加载' : '加载中...'}</p>
           <p>SDK状态: {sdkReady ? '已加载' : '加载中...'}</p>
           <p>调试工具状态: {debuggerReady ? '已加载' : '加载中...'}</p>
           <p>运行环境: {isFeishuEnv ? '飞书客户端' : '非飞书环境'}</p>
-          <p>VConsole状态: {vConsoleReady ? '已加载' : '加载中...'}</p>
           <p>登录状态: {userCode ? '已登录' : '未登录'}</p>
           {error && (
             <p className="text-red-500">登录错误: {error}</p>
