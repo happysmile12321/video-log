@@ -19,19 +19,27 @@ export const useFeishuLogin = (sdkReady: boolean, vConsoleReady: boolean) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
+        mode: 'cors',
+        credentials: 'include',
         body: JSON.stringify({ code }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data: FeishuUserResponse = await response.json();
       
       if (data.code === 0) {
         setUserInfo(data.data);
       } else {
-        setError(data.msg);
+        setError(data.msg || '获取用户信息失败');
       }
     } catch (err) {
-      setError('获取用户信息失败');
+      const errorMessage = err instanceof Error ? err.message : '获取用户信息失败';
+      setError(errorMessage);
       console.error('获取用户信息失败:', err);
     }
   };
