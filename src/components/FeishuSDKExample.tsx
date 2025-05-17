@@ -5,9 +5,9 @@ import { useFeishuLogin } from '@/hooks/useFeishuLogin';
 import type { FeishuSDKResponse, FeishuSDKError } from '@/types/feishu';
 
 export const FeishuSDKExample = () => {
+  const { vConsoleReady } = useVConsole();
   const { sdkReady, isFeishuEnv } = useFeishuJSSDK();
   const { debuggerReady } = useFeishuDebugger();
-  const { vConsoleReady } = useVConsole();
   const { userCode, error } = useFeishuLogin(sdkReady);
 
 
