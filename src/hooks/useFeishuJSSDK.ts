@@ -11,7 +11,7 @@ declare global {
 
 export const useFeishuJSSDK = () => {
   const [sdkReady, setSdkReady] = useState(false);
-
+  const [isFeishuEnv] = useState(true);
  
 
   useEffect(() => {
@@ -40,5 +40,5 @@ export const useFeishuJSSDK = () => {
       }
   }, []);
 
-  return { sdkReady };
+  return { sdkReady, isFeishuEnv };
 }; 
