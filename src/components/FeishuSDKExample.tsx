@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useFeishuJSSDK } from '@/hooks/useFeishuJSSDK';
 import { useFeishuDebugger } from '@/hooks/useFeishuDebugger';
+import type { FeishuSDKResponse, FeishuSDKError } from '@/types/feishu';
 
 export const FeishuSDKExample = () => {
   const { sdkReady, isFeishuEnv } = useFeishuJSSDK();
@@ -15,10 +16,10 @@ export const FeishuSDKExample = () => {
         nonceStr: 'random_string', // 替换为随机字符串
         signature: 'YOUR_SIGNATURE', // 替换为你的签名
         jsApiList: ['getContext', 'openLink'], // 需要使用的 JSAPI 列表
-        onSuccess: function(res: any) {
+        onSuccess: function(res: FeishuSDKResponse) {
           console.log('SDK初始化成功', res);
         },
-        onFail: function(err: any) {
+        onFail: function(err: FeishuSDKError) {
           console.error('SDK初始化失败', err);
         },
       });
@@ -29,10 +30,10 @@ export const FeishuSDKExample = () => {
     if (sdkReady && isFeishuEnv && window.h5sdk) {
       window.h5sdk.openLink({
         url: 'https://example.com',
-        onSuccess: function(res: any) {
+        onSuccess: function(res: FeishuSDKResponse) {
           console.log('打开链接成功', res);
         },
-        onFail: function(err: any) {
+        onFail: function(err: FeishuSDKError) {
           console.error('打开链接失败', err);
         },
       });

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import type { FeishuSDK, FeishuBridge, FeishuTT } from '@/types/feishu';
 
 declare global {
   interface Window {
-    h5sdk: any;
-    __pc_bridge__: any;
-    tt: any;
+    h5sdk: FeishuSDK;
+    __pc_bridge__: FeishuBridge;
+    tt: FeishuTT;
   }
 }
 
@@ -40,7 +41,7 @@ export const useFeishuJSSDK = () => {
           setSdkReady(true);
         };
 
-        script.onerror = (error) => {
+        script.onerror = (error: Event | string) => {
           console.error('Failed to load Feishu JSSDK:', error);
           setSdkReady(false);
         };
