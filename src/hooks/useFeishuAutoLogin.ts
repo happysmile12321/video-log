@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import type { FeishuSDKError } from '@/types/feishu';
 
 export const useFeishuAutoLogin = (sdkReady: boolean) => {
     useEffect(() => {
@@ -7,13 +8,14 @@ export const useFeishuAutoLogin = (sdkReady: boolean) => {
         callRequestAuthCode();
     }, [sdkReady]);
 };
+
 function callRequestAuthCode() {
-    (window.tt as any).requestAuthCode({
+    window.tt.requestAuthCode({
         appId: 'cli_a8a291fcee78d00c',
         success: (res: { code: string }) => {
             console.log(res);
         },
-        fail: (error: any) => {
+        fail: (error: FeishuSDKError) => {
             console.error(error);
         },
     });

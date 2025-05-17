@@ -35,7 +35,14 @@ export interface FeishuBridge {
   call: (method: string, ...args: unknown[]) => void;
 }
 
+export interface RequestAuthCodeOptions {
+  appId: string;
+  success: (res: { code: string }) => void;
+  fail: (error: FeishuSDKError) => void;
+}
+
 export interface FeishuTT {
   config: (options: unknown) => void;
   ready: (callback: () => void) => void;
+  requestAuthCode: (options: RequestAuthCodeOptions) => void;
 } 
