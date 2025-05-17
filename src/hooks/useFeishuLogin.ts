@@ -39,13 +39,8 @@ export const useFeishuLogin = (sdkReady: boolean, vConsoleReady: boolean) => {
   useEffect(() => {
     if (!sdkReady || !vConsoleReady) return;
 
-    // 获取URL中的code参数
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-
-    if (code) {
-      setUserCode(code);
-      fetchUserInfo(code);
+    if (userCode) {
+      fetchUserInfo(userCode);
       return;
     }
 
@@ -72,7 +67,7 @@ export const useFeishuLogin = (sdkReady: boolean, vConsoleReady: boolean) => {
         }
       },
     });
-  }, [sdkReady, vConsoleReady, setUserInfo]);
+  }, [sdkReady, vConsoleReady, setUserInfo, userCode]);
 
   return { userCode, error };
 }; 
