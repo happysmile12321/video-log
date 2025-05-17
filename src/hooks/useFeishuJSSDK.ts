@@ -16,10 +16,8 @@ export const useFeishuJSSDK = () => {
   // 检查是否在飞书环境中
   const checkFeishuEnvironment = () => {
     if (typeof window === 'undefined') return false;
-    
     // 检查是否在飞书PC客户端中
-    //@ts-expect-error
-    const isPcClient = window.LarkWebViewJavaScriptBridge != null;
+    const isPcClient = 'LarkWebViewJavaScriptBridge' in window;
     
     return isPcClient;
   };
