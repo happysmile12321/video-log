@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 import Image from 'next/image';
 import { useKnowledgeContext } from '@/contexts/KnowledgeContext';
@@ -27,12 +27,12 @@ export const menuItems: MenuItem[] = [
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  currentPath?: string;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children, currentPath }: DashboardLayoutProps) {
   const { userInfo } = useUser();
   const router = useRouter();
-  const pathname = usePathname();
   const [isMenuCollapsed, setIsMenuCollapsed] = useState(false);
   const { knowledgeTypes = [], isLoading } = useKnowledgeContext();
   const [expandedMenuId, setExpandedMenuId] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // 点击导航项时在移动端自动关闭菜单
   const handleMenuClick = (item: MenuItem) => {
-    if (pathname !== item.path) {
+    if (currentPath !== item.path) {
       router.push(item.path);
       setIsMobileMenuOpen(false);
     }
@@ -99,7 +99,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <nav className="flex-1 space-y-2 p-4 overflow-y-auto">
         {menuItems.map((item) => {
           const count = getItemCount(item);
-          const isActive = pathname === item.path;
+          const isActive = currentPath === item.path;
           const isExpanded = expandedMenuId === item.id;
           
           return (
