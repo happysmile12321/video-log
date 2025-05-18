@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Tabs } from '@/components/ui/Tabs';
 import { ScrollArea } from '@/components/ui/ScrollArea';
 import { 
@@ -330,7 +330,7 @@ export function VideoContent({
                 <div className="space-y-4">
                   <h2 className="text-xl font-bold text-white">📚 章节内容</h2>
                   <div className="space-y-4">
-                    {subtitles.reduce((acc: Array<JSX.Element>, subtitle, index, array) => {
+                    {subtitles.reduce((acc: Array<React.ReactElement>, subtitle, index, array) => {
                       // 每5条字幕总结为一个章节
                       if (index % 5 === 0) {
                         const sectionSubtitles = array.slice(index, index + 5);
