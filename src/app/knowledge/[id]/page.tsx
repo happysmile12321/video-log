@@ -3,10 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { VideoPlayer } from '@/components/VideoPlayer';
-import { VideoChapters } from '@/components/VideoChapters';
 import { getVideoDetail } from '@/services/api';
 import type { VideoDetail } from '@/services/api';
-import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/ScrollArea';
 import { VideoContent } from '@/components/VideoContent';
 import { VideoChat } from '@/components/VideoChat';
@@ -153,7 +151,6 @@ export default function VideoDetailPage() {
                     <VideoContent
                       highlights={videoDetail.highlights}
                       thoughts={videoDetail.thoughts}
-                      transcript={videoDetail.transcript}
                       mindmap={videoDetail.mindmap}
                       subtitles={videoDetail.subtitles}
                       currentTime={currentTime}
@@ -243,7 +240,6 @@ export default function VideoDetailPage() {
                   <VideoContent
                     highlights={videoDetail.highlights}
                     thoughts={videoDetail.thoughts}
-                    transcript={videoDetail.transcript}
                     mindmap={videoDetail.mindmap}
                     subtitles={videoDetail.subtitles}
                     currentTime={currentTime}
