@@ -11,8 +11,6 @@ import { VideoChat } from '@/components/VideoChat';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Resizer } from '@/components/ui/Resizer';
 import { Tooltip } from '@/components/ui/Tooltip';
-import { VideoSubtitles } from '@/components/VideoSubtitles';
-
 export default function VideoDetailPage() {
   const params = useParams();
   const [videoDetail, setVideoDetail] = useState<VideoDetail | null>(null);
@@ -51,12 +49,7 @@ export default function VideoDetailPage() {
     </div>;
   }
 
-  const timeStringToSeconds = (timeStr: string): number => {
-    const [minutes, seconds] = timeStr.split(':').map(Number);
-    return minutes * 60 + seconds;
-  };
-
-  const handleChapterClick = (time: string) => {
+    const handleChapterClick = (time: string) => {
     if (videoPlayerRef.current) {
       videoPlayerRef.current.handleChapterClick(time);
     }
