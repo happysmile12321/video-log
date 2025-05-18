@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 import type { VConsoleConstructor, VConsoleInstance } from '@/types/vconsole';
 
@@ -12,21 +14,28 @@ export const useVConsole = () => {
   const [vConsoleReady, setVConsoleReady] = useState(false);
 
   useEffect(() => {
+    const initVConsole = () => {
+      if (typeof window !== 'undefined' && !window.vConsole && window.VConsole) {
+        try {
+          const vConsole = new window.VConsole({
+            theme: 'dark',
+            maxLogNumber: 1000
+          });
+          window.vConsole = vConsole;
+          setVConsoleReady(true);
+        } catch (error) {
+          console.error('VConsole initialization failed:', error);
+        }
+      }
+    };
+
     if (typeof window !== 'undefined' && !window.vConsole) {
       const script = document.createElement('script');
-      script.src = 'https://unpkg.com/vconsole/dist/vconsole.min.js';
+      script.src = 'https://unpkg.com/vconsole@latest/dist/vconsole.min.js';
       script.async = true;
       
-      script.onload = () => {
-        // 初始化 VConsole
-        const vConsole = new window.VConsole({
-          theme: 'dark',
-          maxLogNumber: 1000
-        });
-        window.vConsole = vConsole;
-        setVConsoleReady(true);
-      };
-
+      script.onload = initVConsole;
+      
       document.body.appendChild(script);
 
       return () => {

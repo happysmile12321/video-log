@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import { UserProvider } from "@/contexts/UserContext";
+import { KnowledgeProvider } from "@/contexts/KnowledgeContext";
+import ClientProviders from "@/components/ClientProviders";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +38,13 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <UserProvider>{children}</UserProvider>
+        <UserProvider>
+          <KnowledgeProvider>
+            <ClientProviders>
+              {children}
+            </ClientProviders>
+          </KnowledgeProvider>
+        </UserProvider>
       </body>
     </html>
   );
