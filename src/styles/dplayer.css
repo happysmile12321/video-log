@@ -1,0 +1,115 @@
+.dplayer {
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+    line-height: 1;
+}
+
+.dplayer * {
+    box-sizing: content-box;
+}
+
+.dplayer svg {
+    width: 100%;
+    height: 100%;
+}
+
+.dplayer svg path,
+.dplayer svg circle {
+    fill: #fff;
+}
+
+.dplayer:-webkit-full-screen {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    position: fixed;
+    z-index: 100000;
+    left: 0;
+    top: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.dplayer.dplayer-no-danmaku .dplayer-controller .dplayer-icons .dplayer-setting .dplayer-setting-box .dplayer-setting-showdan,
+.dplayer.dplayer-no-danmaku .dplayer-controller .dplayer-icons .dplayer-comment,
+.dplayer.dplayer-no-danmaku .dplayer-danmaku {
+    display: none;
+}
+
+.dplayer.dplayer-live .dplayer-time,
+.dplayer.dplayer-live .dplayer-bar-wrap,
+.dplayer.dplayer-live.dplayer-no-danmaku .dplayer-setting,
+.dplayer.dplayer-live .dplayer-setting-speed,
+.dplayer.dplayer-live .dplayer-setting-loop {
+    display: none;
+}
+
+.dplayer.dplayer-loading .dplayer-bezel .diplayer-loading-icon {
+    display: block;
+}
+
+.dplayer.dplayer-loading .dplayer-danmaku,
+.dplayer.dplayer-paused .dplayer-danmaku,
+.dplayer.dplayer-loading .dplayer-danmaku {
+    opacity: 0.2;
+}
+
+.dplayer.dplayer-hide-controller {
+    cursor: none;
+}
+
+.dplayer.dplayer-hide-controller .dplayer-controller {
+    bottom: -50px;
+}
+
+.dplayer.dplayer-hide-controller .dplayer-controller-mask {
+    opacity: 0;
+}
+
+.dplayer.dplayer-show-controller .dplayer-controller,
+.dplayer.dplayer-show-controller .dplayer-controller-mask {
+    opacity: 1;
+}
+
+.dplayer.dplayer-fulled {
+    position: fixed;
+    z-index: 100000;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.dplayer.dplayer-mobile .dplayer-controller .dplayer-icons .dplayer-volume,
+.dplayer.dplayer-mobile .dplayer-controller .dplayer-icons .dplayer-camera-icon,
+.dplayer.dplayer-mobile .dplayer-controller .dplayer-icons .dplayer-airplay-icon,
+.dplayer.dplayer-mobile .dplayer-controller .dplayer-icons .dplayer-chromecast-icon,
+.dplayer.dplayer-mobile .dplayer-controller .dplayer-icons .dplayer-play-icon {
+    display: none;
+}
+
+.dplayer.dplayer-mobile .dplayer-controller .dplayer-icons .dplayer-full .dplayer-full-in-icon {
+    position: static;
+    display: inline-block;
+}
+
+.dplayer.dplayer-mobile .dplayer-bar-time {
+    display: none;
+}
+
+.dplayer.dplayer-mobile.dplayer-hide-controller .dplayer-mobile-play {
+    display: none;
+}
+
+.dplayer.dplayer-mobile .dplayer-mobile-play {
+    display: block;
+}
+
+.dplayer-web-fullscreen-fix {
+    position: fixed;
+    top: 0;
+    left: 0;
+    margin: 0;
+    padding: 0;
+} 

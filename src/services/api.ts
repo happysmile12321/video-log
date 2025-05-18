@@ -85,7 +85,7 @@ export interface VideoListResponse {
 }
 
 // 知识库类型接口
-export interface KnowledgeTypesResponse extends Array<string> {}
+type KnowledgeTypesResponse = string[];
 
 // 获取知识库类型
 export async function getKnowledgeTypes(): Promise<KnowledgeTypesResponse> {
@@ -143,7 +143,7 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
 
   return {
     ...video,
-    videoUrl: 'https://example.com/video.mp4',
+    videoUrl: 'http://localhost:6676/a.mp4',
     chapters: [
       {
         id: '1',

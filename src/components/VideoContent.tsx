@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tabs } from '@/components/ui/Tabs';
 import { ScrollArea } from '@/components/ui/ScrollArea';
+import Image from 'next/image';
 import { 
   DocumentTextIcon, 
   ListBulletIcon, 
@@ -21,19 +22,6 @@ interface VideoContentProps {
 
 export function VideoContent({ highlights, thoughts, transcript, mindmap }: VideoContentProps) {
   const [activeTab, setActiveTab] = useState('summary');
-  const [contentHeight, setContentHeight] = useState('calc(100vh - 200px)');
-
-  // 根据屏幕大小调整内容高度
-  useEffect(() => {
-    const updateHeight = () => {
-      const isMobile = window.innerWidth < 640;
-      setContentHeight(isMobile ? 'calc(100vh - 280px)' : 'calc(100vh - 200px)');
-    };
-
-    updateHeight();
-    window.addEventListener('resize', updateHeight);
-    return () => window.removeEventListener('resize', updateHeight);
-  }, []);
 
   const tabs = [
     {
@@ -118,7 +106,15 @@ export function VideoContent({ highlights, thoughts, transcript, mindmap }: Vide
           <div className="h-full bg-gray-800 rounded-lg p-4 sm:p-6">
             <div className="h-full flex items-center justify-center bg-gray-700 rounded-lg">
               {mindmap ? (
-                <img src={mindmap} alt="思维导图" className="max-h-full w-auto object-contain" />
+                <div className="relative w-full h-full">
+                  <Image 
+                    src={mindmap} 
+                    alt="思维导图" 
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                </div>
               ) : (
                 <p className="text-gray-400">暂无思维导图</p>
               )}

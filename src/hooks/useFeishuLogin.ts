@@ -14,42 +14,42 @@ export const useFeishuLogin = (sdkReady: boolean, vConsoleReady: boolean) => {
   const [error, setError] = useState<string | null>(null);
   const { setUserInfo, userInfo } = useUser();
 
-  // 获取用户信息
-  const fetchUserInfo = async (code: string) => {
-    try {
-      const response = await fetch('https://open.feishu.cn/anycross/trigger/callback/MDcxNmQzMzAxYjQxYTQzMGI3OWQyNTkwN2VmNDUwZGQ2', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        mode: 'cors',
-        credentials: 'include',
-        body: JSON.stringify({ code }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: FeishuUserResponse = await response.json();
-      
-      if (data.code === 0) {
-        // 保存用户信息到 sessionStorage
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data.data));
-        setUserInfo(data.data);
-      } else {
-        setError(data.msg || '获取用户信息失败');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '获取用户信息失败';
-      setError(errorMessage);
-      console.error('获取用户信息失败:', err);
-    }
-  };
-
   useEffect(() => {
     if (!sdkReady || !vConsoleReady) return;
+
+    // 获取用户信息
+    const fetchUserInfo = async (code: string) => {
+      try {
+        const response = await fetch('https://open.feishu.cn/anycross/trigger/callback/MDcxNmQzMzAxYjQxYTQzMGI3OWQyNTkwN2VmNDUwZGQ2', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          mode: 'cors',
+          credentials: 'include',
+          body: JSON.stringify({ code }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data: FeishuUserResponse = await response.json();
+        
+        if (data.code === 0) {
+          // 保存用户信息到 sessionStorage
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data.data));
+          setUserInfo(data.data);
+        } else {
+          setError(data.msg || '获取用户信息失败');
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : '获取用户信息失败';
+        setError(errorMessage);
+        console.error('获取用户信息失败:', err);
+      }
+    };
 
     // 检查 sessionStorage 中是否已有用户信息
     const storedUserInfo = sessionStorage.getItem(STORAGE_KEY);

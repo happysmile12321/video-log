@@ -27,10 +27,9 @@ export const menuItems: MenuItem[] = [
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  currentPath: string;
 }
 
-export function DashboardLayout({ children, currentPath }: DashboardLayoutProps) {
+export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { userInfo } = useUser();
   const router = useRouter();
   const pathname = usePathname();

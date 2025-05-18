@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Video } from '@/services/api';
 import { VideoGrid } from './VideoGrid';
 import { Squares2X2Icon as ViewGridIcon, ListBulletIcon as ViewListIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 
 interface VideoListProps {
   videos: Video[];
@@ -97,15 +98,14 @@ export function VideoList({
             >
               <div className="flex flex-col sm:flex-row sm:gap-4">
                 {/* Thumbnail container */}
-                <div className="w-full sm:w-48 h-48 sm:h-28 relative mb-4 sm:mb-0 flex-shrink-0">
-                  <img
+                <div className="relative w-full aspect-video rounded-lg overflow-hidden">
+                  <Image
                     src={video.thumbnail}
                     alt={video.title}
-                    className="w-full h-full object-cover rounded"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
-                  <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
-                    {video.duration}
-                  </div>
                 </div>
                 
                 {/* Video info */}
