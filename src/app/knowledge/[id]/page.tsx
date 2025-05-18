@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { VideoChapters } from '@/components/VideoChapters';
@@ -19,6 +19,7 @@ export default function VideoDetailPage() {
   const [videoDetail, setVideoDetail] = useState<VideoDetail | null>(null);
   const [isMobileView, setIsMobileView] = useState(false);
   const [showChapters, setShowChapters] = useState(true);
+  const videoPlayerRef = useRef<{ handleChapterClick: (time: string) => void }>(null);
 
   useEffect(() => {
     const checkMobileView = () => {
@@ -49,6 +50,12 @@ export default function VideoDetailPage() {
       <div className="text-gray-400">加载中...</div>
     </div>;
   }
+
+  const handleChapterClick = (time: string) => {
+    if (videoPlayerRef.current) {
+      videoPlayerRef.current.handleChapterClick(time);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col md:h-screen md:overflow-hidden">
@@ -84,7 +91,7 @@ export default function VideoDetailPage() {
                         <Tooltip key={chapter.id} content={chapter.title}>
                           <div
                             className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded-lg cursor-pointer"
-                            onClick={() => {/* 处理章节点击 */}}
+                            onClick={() => handleChapterClick(chapter.time)}
                           >
                             <div className="flex items-center">
                               <span className="text-gray-500 w-12">{chapter.time}</span>
@@ -109,7 +116,11 @@ export default function VideoDetailPage() {
                   {/* 视频播放器 */}
                   <div className="flex-none">
                     <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                      <VideoPlayer videoUrl={videoDetail.videoUrl} />
+                      <VideoPlayer
+                        ref={videoPlayerRef}
+                        videoUrl={videoDetail.videoUrl}
+                        chapters={videoDetail.chapters}
+                      />
                     </div>
                   </div>
                   {/* 聊天区域 */}
@@ -176,7 +187,7 @@ export default function VideoDetailPage() {
                           <Tooltip key={chapter.id} content={chapter.title}>
                             <div
                               className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded-lg cursor-pointer"
-                              onClick={() => {/* 处理章节点击 */}}
+                              onClick={() => handleChapterClick(chapter.time)}
                             >
                               <div className="flex items-center">
                                 <span className="text-gray-500 w-12">{chapter.time}</span>
@@ -193,7 +204,11 @@ export default function VideoDetailPage() {
                 {/* 视频播放器 */}
                 <div className="flex-none">
                   <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                    <VideoPlayer videoUrl={videoDetail.videoUrl} />
+                    <VideoPlayer
+                      ref={videoPlayerRef}
+                      videoUrl={videoDetail.videoUrl}
+                      chapters={videoDetail.chapters}
+                    />
                   </div>
                 </div>
 

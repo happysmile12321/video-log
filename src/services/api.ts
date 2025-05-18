@@ -143,7 +143,7 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
 
   return {
     ...video,
-    videoUrl: 'http://localhost:6676/a.mp4',
+    videoUrl: '/videos/sample.mp4',
     chapters: [
       {
         id: '1',
