@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 import Image from 'next/image';
 import { useKnowledgeContext } from '@/contexts/KnowledgeContext';
+import { MobileNavButton } from './MobileNavButton';
 
 interface MenuItem {
   id: 'home' | 'knowledge' | 'action' | 'tags' | 'subscription' | 'explore';
@@ -36,20 +37,36 @@ export function DashboardLayout({ children, currentPath }: DashboardLayoutProps)
   const [isMenuCollapsed, setIsMenuCollapsed] = useState(false);
   const { knowledgeTypes = [], isLoading } = useKnowledgeContext();
   const [expandedMenuId, setExpandedMenuId] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // 在移动端时自动收起菜单
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // 点击导航项时在移动端自动关闭菜单
   const handleMenuClick = (item: MenuItem) => {
     if (pathname !== item.path) {
       router.push(item.path);
+      setIsMobileMenuOpen(false);
     }
   };
 
   const handleExpandClick = (itemId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // 阻止事件冒泡到菜单项
+    e.stopPropagation();
     setExpandedMenuId(expandedMenuId === itemId ? null : itemId);
   };
 
   const handleKnowledgeTypeClick = (typeId: string) => {
     router.push(`/knowledge/type/${typeId}`);
+    setIsMobileMenuOpen(false);
   };
 
   const getItemCount = (item: MenuItem): number => {
@@ -63,108 +80,135 @@ export function DashboardLayout({ children, currentPath }: DashboardLayoutProps)
     return null;
   }
 
-  return (
-    <div className="flex h-screen bg-gray-900">
-      {/* 左侧菜单 */}
-      <div className={`${isMenuCollapsed ? 'w-16' : 'w-64'} bg-gray-800 text-white flex flex-col transition-all duration-300`}>
-        <div className="flex-none p-4">
-          <div className="flex items-center space-x-2">
-            <Image
-              src={userInfo.avatar_url}
-              alt="Logo"
-              width={32}
-              height={32}
-              className="rounded-lg"
-            />
-            {!isMenuCollapsed && <span className="font-semibold">BibiGPT</span>}
-          </div>
+  const renderNavigation = () => (
+    <div className={`bg-gray-800 text-white flex flex-col h-full md:h-screen ${
+      isMenuCollapsed ? 'w-16' : 'w-64'
+    } transition-all duration-300`}>
+      <div className="flex-none p-4">
+        <div className="flex items-center space-x-2">
+          <Image
+            src={userInfo.avatar_url}
+            alt="Logo"
+            width={32}
+            height={32}
+            className="rounded-lg"
+          />
+          {!isMenuCollapsed && <span className="font-semibold">BibiGPT</span>}
         </div>
+      </div>
 
-        {/* 菜单项 */}
-        <nav className="flex-1 space-y-2 p-4 overflow-y-auto">
-          {menuItems.map((item) => {
-            const count = getItemCount(item);
-            const isActive = pathname === item.path;
-            const isExpanded = expandedMenuId === item.id;
-            
-            return (
-              <div key={item.id}>
-                <div
-                  onClick={() => handleMenuClick(item)}
-                  className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-colors cursor-pointer ${
-                    isActive ? 'bg-gray-700' : 'hover:bg-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <span>{item.icon}</span>
-                    {!isMenuCollapsed && (
-                      <span>{item.label}</span>
-                    )}
-                  </div>
+      <nav className="flex-1 space-y-2 p-4 overflow-y-auto">
+        {menuItems.map((item) => {
+          const count = getItemCount(item);
+          const isActive = pathname === item.path;
+          const isExpanded = expandedMenuId === item.id;
+          
+          return (
+            <div key={item.id}>
+              <div
+                onClick={() => handleMenuClick(item)}
+                className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-colors cursor-pointer ${
+                  isActive ? 'bg-gray-700' : 'hover:bg-gray-700'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <span>{item.icon}</span>
                   {!isMenuCollapsed && (
-                    <div className="flex items-center space-x-2">
-                      {count > 0 && (
-                        <span className="bg-gray-600 px-2 rounded-full text-sm">
-                          {count}
-                        </span>
-                      )}
-                      {item.id === 'knowledge' && (
-                        <button
-                          onClick={(e) => handleExpandClick(item.id, e)}
-                          className="ml-2 p-1 hover:bg-gray-600 rounded transition-colors"
-                        >
-                          {isExpanded ? '▼' : '▶'}
-                        </button>
-                      )}
-                    </div>
+                    <span>{item.label}</span>
                   )}
                 </div>
-
-                {/* 知识库子菜单 */}
-                {!isMenuCollapsed && item.id === 'knowledge' && isExpanded && (
-                  <div className="ml-8 mt-2 space-y-1">
-                    {isLoading ? (
-                      <div className="text-gray-400 text-sm px-4 py-1">加载中...</div>
-                    ) : (
-                      knowledgeTypes.map((type) => (
-                        <button
-                          key={type.id}
-                          onClick={() => handleKnowledgeTypeClick(type.id)}
-                          className="w-full text-left px-4 py-1 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded cursor-pointer truncate flex items-center justify-between"
-                        >
-                          <span>{type.name}</span>
-                          <span className="text-xs bg-gray-600 px-2 rounded-full">
-                            {type.count}
-                          </span>
-                        </button>
-                      ))
+                {!isMenuCollapsed && (
+                  <div className="flex items-center space-x-2">
+                    {count > 0 && (
+                      <span className="bg-gray-600 px-2 rounded-full text-sm">
+                        {count}
+                      </span>
+                    )}
+                    {item.id === 'knowledge' && (
+                      <button
+                        onClick={(e) => handleExpandClick(item.id, e)}
+                        className="ml-2 p-1 hover:bg-gray-600 rounded transition-colors"
+                      >
+                        {isExpanded ? '▼' : '▶'}
+                      </button>
                     )}
                   </div>
                 )}
               </div>
-            );
-          })}
-        </nav>
 
-        {/* 底部用户信息 */}
-        <div className="flex-none p-4 border-t border-gray-700">
-          <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-700 cursor-pointer">
-            <Image
-              src={userInfo.avatar_url}
-              alt={userInfo.name}
-              width={32}
-              height={32}
-              className="rounded-full"
-            />
-            {!isMenuCollapsed && (
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">{userInfo.name}</div>
-                <div className="text-xs text-gray-400 truncate">{userInfo.email}</div>
-              </div>
-            )}
-          </div>
+              {!isMenuCollapsed && item.id === 'knowledge' && isExpanded && (
+                <div className="ml-8 mt-2 space-y-1">
+                  {isLoading ? (
+                    <div className="text-gray-400 text-sm px-4 py-1">加载中...</div>
+                  ) : (
+                    knowledgeTypes.map((type) => (
+                      <button
+                        key={type.id}
+                        onClick={() => handleKnowledgeTypeClick(type.id)}
+                        className="w-full text-left px-4 py-1 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded cursor-pointer truncate flex items-center justify-between"
+                      >
+                        <span>{type.name}</span>
+                        <span className="text-xs bg-gray-600 px-2 rounded-full">
+                          {type.count}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </nav>
+
+      <div className="flex-none p-4 border-t border-gray-700">
+        <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-700 cursor-pointer">
+          <Image
+            src={userInfo.avatar_url}
+            alt={userInfo.name}
+            width={32}
+            height={32}
+            className="rounded-full"
+          />
+          {!isMenuCollapsed && (
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium truncate">{userInfo.name}</div>
+              <div className="text-xs text-gray-400 truncate">{userInfo.email}</div>
+            </div>
+          )}
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <div className="flex h-screen bg-gray-900">
+      {/* 桌面端导航 */}
+      <div className="hidden md:block h-screen">
+        {renderNavigation()}
+      </div>
+
+      {/* 移动端导航按钮和菜单 */}
+      <MobileNavButton
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        isOpen={isMobileMenuOpen}
+      />
+
+      {/* 移动端导航菜单 - 磨砂玻璃效果 */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-40 md:hidden flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div 
+            className="relative w-[90%] max-w-sm max-h-[80vh] bg-gray-800 bg-opacity-90 backdrop-blur-md rounded-xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {renderNavigation()}
+          </div>
+        </div>
+      )}
 
       {/* 主要内容区域 */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -173,7 +217,7 @@ export function DashboardLayout({ children, currentPath }: DashboardLayoutProps)
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setIsMenuCollapsed(!isMenuCollapsed)}
-              className="p-2 hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+              className="p-2 hover:bg-gray-700 rounded-lg transition-colors cursor-pointer hidden md:block"
             >
               {isMenuCollapsed ? '→' : '←'}
             </button>
