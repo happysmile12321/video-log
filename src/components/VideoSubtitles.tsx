@@ -19,7 +19,6 @@ export function VideoSubtitles({ subtitles, onTimeClick, currentTime = 0 }: Vide
   };
 
   // Get unique speakers to assign colors
-  const uniqueSpeakers = Array.from(new Set(subtitles.map(s => s.speaker)));
   const speakerColors = {
     '张老师': 'bg-blue-500/20 text-blue-300 border-blue-500/50',
     '学生A': 'bg-green-500/20 text-green-300 border-green-500/50',

@@ -30,7 +30,7 @@ export function extractBilibiliId(url: string): string | null {
       const match = urlObj.pathname.match(/(BV[\w]+)/);
       return match ? match[1] : null;
     }
-  } catch (e) {
+  } catch {
     // URL解析失败，尝试直接匹配BV号
     const match = url.match(/(BV[\w]+)/);
     return match ? match[1] : null;

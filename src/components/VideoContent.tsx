@@ -20,7 +20,6 @@ interface VideoContentProps {
     tags: string[];
   }>;
   thoughts: string[];
-  mindmap?: string;
   subtitles: Subtitle[];
   currentTime: number;
   onTimeClick: (timestamp: number) => void;
@@ -29,7 +28,6 @@ interface VideoContentProps {
 export function VideoContent({ 
   highlights, 
   thoughts, 
-  mindmap,
   subtitles,
   currentTime,
   onTimeClick
@@ -332,7 +330,7 @@ export function VideoContent({
                 <div className="space-y-4">
                   <h2 className="text-xl font-bold text-white">📚 章节内容</h2>
                   <div className="space-y-4">
-                    {subtitles.reduce((acc: any[], subtitle, index, array) => {
+                    {subtitles.reduce((acc: Array<JSX.Element>, subtitle, index, array) => {
                       // 每5条字幕总结为一个章节
                       if (index % 5 === 0) {
                         const sectionSubtitles = array.slice(index, index + 5);

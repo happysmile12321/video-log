@@ -27,7 +27,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const playerRef = useRef<Artplayer | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [currentChapter, setCurrentChapter] = useState<string | null>(null);
 
     // Format video URL
     const formattedVideoUrl = useCallback((url: string) => {
@@ -137,7 +136,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       
       try {
         playerRef.current.currentTime = totalSeconds;
-        setCurrentChapter(timeString);
       } catch (error) {
         console.error('Failed to seek:', error);
       }

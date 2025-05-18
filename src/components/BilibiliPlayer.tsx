@@ -30,7 +30,7 @@ export const BilibiliPlayer = forwardRef<BilibiliPlayerHandle, BilibiliPlayerPro
     const [currentChapter, setCurrentChapter] = useState<string | null>(null);
 
     // 处理章节点击
-    const handleChapterClick = (timeString: string) => {
+    const handleChapterClick = useCallback((timeString: string) => {
       if (!playerRef.current) return;
       
       const [minutes, seconds] = timeString.split(':').map(Number);
@@ -42,7 +42,7 @@ export const BilibiliPlayer = forwardRef<BilibiliPlayerHandle, BilibiliPlayerPro
       } catch (error) {
         console.error('Failed to seek:', error);
       }
-    };
+    }, []);
 
     // 暴露方法给父组件
     useEffect(() => {
@@ -99,7 +99,7 @@ export const BilibiliPlayer = forwardRef<BilibiliPlayerHandle, BilibiliPlayerPro
           playerRef.current.destroy();
         }
       };
-    }, [videoUrl]);
+    }, [videoUrl, onTimeUpdate]);
 
     return (
       <div className="flex flex-1">
