@@ -144,7 +144,6 @@ export default function VideoDetailPage() {
                     <VideoContent
                       highlights={videoDetail.highlights}
                       thoughts={videoDetail.thoughts}
-                      mindmap={videoDetail.mindmap}
                       subtitles={videoDetail.subtitles}
                       currentTime={currentTime}
                       onTimeClick={handleTimeClick}
@@ -233,7 +232,6 @@ export default function VideoDetailPage() {
                   <VideoContent
                     highlights={videoDetail.highlights}
                     thoughts={videoDetail.thoughts}
-                    mindmap={videoDetail.mindmap}
                     subtitles={videoDetail.subtitles}
                     currentTime={currentTime}
                     onTimeClick={handleTimeClick}
