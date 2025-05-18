@@ -11,7 +11,9 @@ import {
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import { VideoSubtitles } from '@/components/VideoSubtitles';
+import { MindMap } from '@/components/MindMap';
 import { Subtitle } from '@/services/api';
+import { Node, Edge } from 'reactflow';
 
 interface VideoContentProps {
   highlights: Array<{
@@ -20,7 +22,6 @@ interface VideoContentProps {
     tags: string[];
   }>;
   thoughts: string[];
-  transcript?: string;
   mindmap?: string;
   subtitles: Subtitle[];
   currentTime: number;
@@ -30,7 +31,6 @@ interface VideoContentProps {
 export function VideoContent({ 
   highlights, 
   thoughts, 
-  transcript, 
   mindmap,
   subtitles,
   currentTime,
@@ -39,6 +39,44 @@ export function VideoContent({
   const [activeTab, setActiveTab] = useState('subtitles');
   const [showBackToTop, setShowBackToTop] = useState(false);
   const summaryScrollRef = useRef<HTMLDivElement>(null);
+
+  // Helper function to merge subtitles into paragraphs
+  const getMergedSubtitles = () => {
+    const paragraphs: Array<{
+      startTime: number;
+      time: string;
+      content: string[];
+      speaker: string;
+    }> = [];
+    
+    let currentParagraph: typeof paragraphs[0] | null = null;
+    
+    subtitles.forEach((subtitle, index) => {
+      // Start a new paragraph if:
+      // 1. No current paragraph
+      // 2. Different speaker
+      // 3. Time gap > 10 seconds
+      // 4. Every 5 subtitles (to avoid too long paragraphs)
+      const shouldStartNewParagraph = !currentParagraph ||
+        currentParagraph.speaker !== subtitle.speaker ||
+        subtitle.timestamp - (subtitles[index - 1]?.timestamp || 0) > 10 ||
+        currentParagraph.content.length >= 5;
+      
+      if (shouldStartNewParagraph) {
+        currentParagraph = {
+          startTime: subtitle.timestamp,
+          time: subtitle.time,
+          content: [subtitle.content],
+          speaker: subtitle.speaker
+        };
+        paragraphs.push(currentParagraph);
+      } else {
+        (currentParagraph as typeof paragraphs[0]).content.push(subtitle.content);
+      }
+    });
+    
+    return paragraphs;
+  };
 
   const handleScroll = (event: any) => {
     const scrollTop = event.target.scrollTop;
@@ -71,16 +109,149 @@ export function VideoContent({
       icon: <MapIcon className="w-4 h-4" />,
     },
     {
-      id: 'transcript',
-      label: '原文稿',
-      icon: <ListBulletIcon className="w-4 h-4" />,
-    },
-    {
       id: 'article',
       label: '文章视图',
       icon: <DocumentDuplicateIcon className="w-4 h-4" />,
     },
   ];
+
+  // Generate mindmap data from highlights and thoughts
+  const mindmapData = {
+    nodes: [
+      {
+        id: 'root',
+        type: 'default',
+        data: { label: '程序员职业发展' },
+        position: { x: 0, y: 0 },
+        style: {
+          background: '#1F2937',
+          color: '#fff',
+          border: '1px solid #374151',
+          borderRadius: '8px',
+          padding: '8px 16px',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          width: 140,
+          textAlign: 'center',
+        },
+      },
+      // 主要主题节点
+      ...highlights.map((highlight, index) => ({
+        id: `highlight-${index}`,
+        type: 'default',
+        data: { label: highlight.title },
+        position: { 
+          x: Math.cos((2 * Math.PI * index) / highlights.length) * 200,
+          y: Math.sin((2 * Math.PI * index) / highlights.length) * 200
+        },
+        style: {
+          background: '#374151',
+          color: '#fff',
+          border: '1px solid #4B5563',
+          borderRadius: '8px',
+          padding: '6px 12px',
+          fontSize: '13px',
+          width: 130,
+          textAlign: 'center',
+        },
+      })),
+      // 标签节点
+      ...highlights.flatMap((highlight, hIndex) => 
+        highlight.tags.map((tag, tIndex) => ({
+          id: `tag-${hIndex}-${tIndex}`,
+          type: 'default',
+          data: { label: `#${tag}` },
+          position: {
+            x: Math.cos((2 * Math.PI * hIndex) / highlights.length) * 350 + 
+               Math.cos((2 * Math.PI * tIndex) / highlight.tags.length) * 60,
+            y: Math.sin((2 * Math.PI * hIndex) / highlights.length) * 350 +
+               Math.sin((2 * Math.PI * tIndex) / highlight.tags.length) * 60
+          },
+          style: {
+            background: '#1D4ED8',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '12px',
+            padding: '2px 8px',
+            fontSize: '11px',
+            textAlign: 'center',
+          },
+        }))
+      ),
+      // 思考节点
+      ...thoughts.map((thought, index) => ({
+        id: `thought-${index}`,
+        type: 'default',
+        data: { label: thought },
+        position: {
+          x: Math.cos((2 * Math.PI * index) / thoughts.length) * 450,
+          y: Math.sin((2 * Math.PI * index) / thoughts.length) * 450
+        },
+        style: {
+          background: '#065F46',
+          color: '#fff',
+          border: '1px solid #047857',
+          borderRadius: '8px',
+          padding: '6px 12px',
+          fontSize: '11px',
+          width: 160,
+          textAlign: 'center',
+        },
+      })),
+    ] as Node[],
+    edges: [
+      // 连接主题到根节点
+      ...highlights.map((_, index) => ({
+        id: `edge-root-${index}`,
+        source: 'root',
+        target: `highlight-${index}`,
+        style: { stroke: '#4B5563', strokeWidth: 2 },
+        type: 'smoothstep',
+        animated: true,
+      })),
+      // 连接标签到主题
+      ...highlights.flatMap((highlight, hIndex) =>
+        highlight.tags.map((_, tIndex) => ({
+          id: `edge-highlight-${hIndex}-${tIndex}`,
+          source: `highlight-${hIndex}`,
+          target: `tag-${hIndex}-${tIndex}`,
+          style: { stroke: '#2563EB', strokeWidth: 1 },
+          type: 'straight',
+        }))
+      ),
+      // 连接思考到根节点
+      ...thoughts.map((_, index) => ({
+        id: `edge-thought-${index}`,
+        source: 'root',
+        target: `thought-${index}`,
+        style: { stroke: '#047857', strokeWidth: 1.5 },
+        type: 'smoothstep',
+      })),
+    ] as Edge[],
+  };
+
+  // 生成主题总结的辅助函数
+  const generateTopic = (content: string): string => {
+    if (content.includes('鸿蒙') || content.includes('操作系统')) {
+      return '鸿蒙系统为开发者带来新的发展机遇';
+    } else if (content.includes('独立开发') || content.includes('创业')) {
+      return '独立开发需要全面考虑技术和市场因素';
+    } else if (content.includes('就业') || content.includes('工作')) {
+      return '当前就业环境下程序员面临的机遇与挑战';
+    } else if (content.includes('学习') || content.includes('技术')) {
+      return '持续学习是程序员保持竞争力的关键';
+    } else if (content.includes('规划') || content.includes('发展')) {
+      return '职业发展需要合理规划和积极把握机会';
+    } else {
+      const words = content.split(' ').filter(word => 
+        word.length > 2 && 
+        !['这个', '那个', '就是', '可以', '应该'].includes(word)
+      );
+      return words.length > 0 ? 
+        `关于${words[0]}的深入探讨和分析` : 
+        '重要观点讨论与分析';
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -216,36 +387,8 @@ export function VideoContent({
         )}
 
         {activeTab === 'mindmap' && (
-          <div className="h-full bg-gray-800 rounded-lg p-4 sm:p-6">
-            <div className="h-full flex items-center justify-center bg-gray-700 rounded-lg">
-              {mindmap ? (
-                <div className="relative w-full h-full">
-                  <Image 
-                    src={mindmap} 
-                    alt="思维导图" 
-                    fill
-                    className="object-contain"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
-                </div>
-              ) : (
-                <p className="text-gray-400">暂无思维导图</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'transcript' && (
-          <div className="h-full bg-gray-800 rounded-lg p-4 sm:p-6">
-            <ScrollArea className="h-full">
-              {transcript ? (
-                <pre className="whitespace-pre-wrap text-gray-300 font-mono text-sm">
-                  {transcript}
-                </pre>
-              ) : (
-                <p className="text-gray-400">暂无字幕</p>
-              )}
-            </ScrollArea>
+          <div className="h-full bg-gray-800 rounded-lg overflow-hidden">
+            <MindMap data={mindmapData} />
           </div>
         )}
 
@@ -253,30 +396,34 @@ export function VideoContent({
           <div className="h-full bg-gray-800 rounded-lg p-4 sm:p-6">
             <ScrollArea className="h-full">
               <article className="prose prose-invert prose-sm sm:prose max-w-none">
-                <h1 className="text-xl sm:text-2xl">{highlights[0]?.title}</h1>
-                {highlights.map((highlight, index) => (
-                  <section key={index} className="mb-6 sm:mb-8">
-                    <h2 className="text-lg sm:text-xl">{highlight.title}</h2>
-                    <p>{highlight.content}</p>
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 not-prose mt-3 sm:mt-4">
-                      {highlight.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-0.5 bg-gray-700 text-xs text-blue-400 rounded-full"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  </section>
-                ))}
+                <h1 className="text-xl sm:text-2xl mb-8">{highlights[0]?.title}</h1>
                 
-                <h2 className="text-lg sm:text-xl">思考与启发</h2>
-                <ul className="space-y-2">
-                  {thoughts.map((thought, index) => (
-                    <li key={index} className="text-sm sm:text-base">{thought}</li>
-                  ))}
-                </ul>
+                {/* 正文内容 */}
+                <div className="space-y-8">
+                  {getMergedSubtitles().map((paragraph, index) => {
+                    const content = paragraph.content.join(' ');
+                    const topic = generateTopic(content);
+                    
+                    return (
+                      <div key={index} className="space-y-3">
+                        <h3 className="text-gray-400 text-sm font-medium">
+                          📌 {topic}
+                        </h3>
+                        <p className="text-gray-200">
+                          {paragraph.content.map((sentence, sentenceIndex) => (
+                            <button
+                              key={sentenceIndex}
+                              onClick={() => onTimeClick(paragraph.startTime)}
+                              className="inline hover:text-blue-400 hover:underline cursor-pointer"
+                            >
+                              {sentence}{' '}
+                            </button>
+                          ))}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
               </article>
             </ScrollArea>
           </div>
