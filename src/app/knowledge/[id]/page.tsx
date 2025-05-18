@@ -13,12 +13,14 @@ import { VideoChat } from '@/components/VideoChat';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Resizer } from '@/components/ui/Resizer';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { VideoSubtitles } from '@/components/VideoSubtitles';
 
 export default function VideoDetailPage() {
   const params = useParams();
   const [videoDetail, setVideoDetail] = useState<VideoDetail | null>(null);
   const [isMobileView, setIsMobileView] = useState(false);
   const [showChapters, setShowChapters] = useState(true);
+  const [currentTime, setCurrentTime] = useState(0);
   const videoPlayerRef = useRef<{ handleChapterClick: (time: string) => void }>(null);
 
   useEffect(() => {
@@ -51,9 +53,24 @@ export default function VideoDetailPage() {
     </div>;
   }
 
+  const timeStringToSeconds = (timeStr: string): number => {
+    const [minutes, seconds] = timeStr.split(':').map(Number);
+    return minutes * 60 + seconds;
+  };
+
   const handleChapterClick = (time: string) => {
     if (videoPlayerRef.current) {
       videoPlayerRef.current.handleChapterClick(time);
+    }
+  };
+
+  const handleTimeClick = (timestamp: number) => {
+    if (videoPlayerRef.current) {
+      // Convert timestamp to time string (MM:SS format)
+      const minutes = Math.floor(timestamp / 60);
+      const seconds = Math.floor(timestamp % 60);
+      const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      videoPlayerRef.current.handleChapterClick(timeString);
     }
   };
 
@@ -120,6 +137,7 @@ export default function VideoDetailPage() {
                         ref={videoPlayerRef}
                         videoUrl={videoDetail.videoUrl}
                         chapters={videoDetail.chapters}
+                        onTimeUpdate={setCurrentTime}
                       />
                     </div>
                   </div>
@@ -137,6 +155,9 @@ export default function VideoDetailPage() {
                       thoughts={videoDetail.thoughts}
                       transcript={videoDetail.transcript}
                       mindmap={videoDetail.mindmap}
+                      subtitles={videoDetail.subtitles}
+                      currentTime={currentTime}
+                      onTimeClick={handleTimeClick}
                     />
                   </div>
                 </div>
@@ -224,6 +245,9 @@ export default function VideoDetailPage() {
                     thoughts={videoDetail.thoughts}
                     transcript={videoDetail.transcript}
                     mindmap={videoDetail.mindmap}
+                    subtitles={videoDetail.subtitles}
+                    currentTime={currentTime}
+                    onTimeClick={handleTimeClick}
                   />
                 </div>
               </div>

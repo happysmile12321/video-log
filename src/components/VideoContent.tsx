@@ -6,8 +6,11 @@ import {
   DocumentTextIcon, 
   ListBulletIcon, 
   DocumentDuplicateIcon,
-  MapIcon 
+  MapIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
+import { VideoSubtitles } from '@/components/VideoSubtitles';
+import { Subtitle } from '@/services/api';
 
 interface VideoContentProps {
   highlights: Array<{
@@ -18,12 +21,28 @@ interface VideoContentProps {
   thoughts: string[];
   transcript?: string;
   mindmap?: string;
+  subtitles: Subtitle[];
+  currentTime: number;
+  onTimeClick: (timestamp: number) => void;
 }
 
-export function VideoContent({ highlights, thoughts, transcript, mindmap }: VideoContentProps) {
-  const [activeTab, setActiveTab] = useState('summary');
+export function VideoContent({ 
+  highlights, 
+  thoughts, 
+  transcript, 
+  mindmap,
+  subtitles,
+  currentTime,
+  onTimeClick
+}: VideoContentProps) {
+  const [activeTab, setActiveTab] = useState('subtitles');
 
   const tabs = [
+    {
+      id: 'subtitles',
+      label: '字幕列表',
+      icon: <ChatBubbleLeftRightIcon className="w-4 h-4" />,
+    },
     {
       id: 'summary',
       label: '总结摘要',
@@ -36,7 +55,7 @@ export function VideoContent({ highlights, thoughts, transcript, mindmap }: Vide
     },
     {
       id: 'transcript',
-      label: '字幕列表',
+      label: '原文稿',
       icon: <ListBulletIcon className="w-4 h-4" />,
     },
     {
@@ -51,6 +70,16 @@ export function VideoContent({ highlights, thoughts, transcript, mindmap }: Vide
       <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
       
       <div className="flex-1 mt-2 sm:mt-4 min-h-0">
+        {activeTab === 'subtitles' && (
+          <div className="h-full bg-gray-800 rounded-lg">
+            <VideoSubtitles
+              subtitles={subtitles}
+              currentTime={currentTime}
+              onTimeClick={onTimeClick}
+            />
+          </div>
+        )}
+
         {activeTab === 'summary' && (
           <div className="h-full bg-gray-800 rounded-lg p-4 sm:p-6">
             <ScrollArea className="h-full">

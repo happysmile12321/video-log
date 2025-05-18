@@ -27,6 +27,15 @@ export interface APIResponse<T> {
   data: T;
 }
 
+// 字幕类型定义
+export interface Subtitle {
+  id: string;
+  timestamp: number;
+  time: string;
+  speaker: string;
+  content: string;
+}
+
 // 基础 API 调用函数
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}/${endpoint}`, {
@@ -65,6 +74,7 @@ export interface VideoDetail extends Video {
     title: string;
     content: string;
   }[];
+  subtitles: Subtitle[];
   highlights: {
     title: string;
     content: string;
@@ -162,6 +172,50 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
         time: '01:19',
         title: '程序员总结之旅',
         content: '总结程序员职业发展的不同路径。'
+      }
+    ],
+    subtitles: [
+      {
+        id: '1',
+        timestamp: 0,
+        time: '00:00',
+        speaker: '张老师',
+        content: '大家好，今天我们来聊聊程序员的职业发展问题。'
+      },
+      {
+        id: '2',
+        timestamp: 15,
+        time: '00:15',
+        speaker: '学生A',
+        content: '老师，我听说现在程序员就业压力很大，是真的吗？'
+      },
+      {
+        id: '3',
+        timestamp: 30,
+        time: '00:30',
+        speaker: '张老师',
+        content: '确实，但压力同时也意味着机遇。让我们先看看当前的就业形势。'
+      },
+      {
+        id: '4',
+        timestamp: 45,
+        time: '00:45',
+        speaker: '学生B',
+        content: '我对独立开发很感兴趣，但不知道风险有多大。'
+      },
+      {
+        id: '5',
+        timestamp: 60,
+        time: '01:00',
+        speaker: '张老师',
+        content: '独立开发确实需要考虑很多因素，包括技术储备、市场需求和资金规划。'
+      },
+      {
+        id: '6',
+        timestamp: 75,
+        time: '01:15',
+        speaker: '学生C',
+        content: '听说鸿蒙系统现在机会不错，老师怎么看？'
       }
     ],
     highlights: [
