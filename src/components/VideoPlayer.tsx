@@ -68,8 +68,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         muted: false,
         icons: {
           loading: '<img src="/loading.gif" width="40" height="40">',
-          play: '<img src="/play.svg" width="24" height="24">',
-          pause: '<img src="/pause.svg" width="24" height="24">',
+          play: '<img src="/play.svg" width="24" height="24" style="filter: brightness(1);">',
+          pause: '<img src="/pause.svg" width="24" height="24" style="filter: brightness(1);">',
         },
         settings: [
           {
@@ -154,8 +154,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     <div className="flex flex-col h-full">
       <div className="flex flex-1">
         {/* Video player */}
-        <div className="flex-1 relative bg-black">
-          <div ref={containerRef} className="w-full h-full" />
+        <div className="flex-1 relative bg-black min-w-0">
+          <div ref={containerRef} className="w-full h-full absolute inset-0" />
           
           {/* Loading state */}
           {isLoading && (
