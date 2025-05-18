@@ -27,9 +27,10 @@ export const menuItems: MenuItem[] = [
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  currentPath: string;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children, currentPath }: DashboardLayoutProps) {
   const { userInfo } = useUser();
   const router = useRouter();
   const pathname = usePathname();
@@ -86,13 +87,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="flex-none p-4">
         <div className="flex items-center space-x-2">
           <Image
-            src={userInfo.avatar_url}
+            src="/logo.svg"
             alt="Logo"
             width={32}
             height={32}
             className="rounded-lg"
           />
-          {!isMenuCollapsed && <span className="font-semibold">BibiGPT</span>}
+          {!isMenuCollapsed && <span className="font-semibold">ReduceVideo</span>}
         </div>
       </div>
 
@@ -220,7 +221,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             >
               {isMenuCollapsed ? '→' : '←'}
             </button>
-            <h2 className="text-xl font-semibold">欢迎使用 BibiGPT</h2>
+            <h2 className="text-xl font-semibold">欢迎使用 ReduceVideo</h2>
           </div>
           <div className="flex items-center space-x-4">
             <button className="p-2 hover:bg-gray-700 rounded-lg cursor-pointer">🔍</button>

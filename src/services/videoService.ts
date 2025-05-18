@@ -1,6 +1,6 @@
 import { VideoListResponse } from '@/types/video';
 
-const API_BASE = 'https://api.bibigpt.co/v1';
+const API_BASE = 'https://api.reducevideo.co/v1';
 
 export async function getVideoList(params: {
   page: number;

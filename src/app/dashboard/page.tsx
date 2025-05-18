@@ -25,7 +25,7 @@ export default function Dashboard() {
       <div className="p-8">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-2xl text-white text-center mb-2">
-            BibiGPT 让你的视频内容得快，搜得到，用得好
+            ReduceVideo 让你的视频内容得快，搜得到，用得好
           </h1>
 
           {/* 输入框 */}
