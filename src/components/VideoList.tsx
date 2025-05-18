@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Video } from '@/services/api';
 import { VideoGrid } from './VideoGrid';
 import { Squares2X2Icon as ViewGridIcon, ListBulletIcon as ViewListIcon } from '@heroicons/react/24/outline';
@@ -23,6 +24,11 @@ export function VideoList({
   onPageChange
 }: VideoListProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const router = useRouter();
+
+  const handleVideoClick = (videoId: string) => {
+    router.push(`/knowledge/${videoId}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -80,13 +86,14 @@ export function VideoList({
 
       {/* Video content */}
       {viewMode === 'grid' ? (
-        <VideoGrid videos={videos} />
+        <VideoGrid videos={videos} onVideoClick={handleVideoClick} />
       ) : (
         <div className="space-y-4">
           {videos.map((video) => (
             <div
               key={video.id}
-              className="bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors"
+              onClick={() => handleVideoClick(video.id)}
+              className="bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors cursor-pointer"
             >
               <div className="flex flex-col sm:flex-row sm:gap-4">
                 {/* Thumbnail container */}

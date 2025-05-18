@@ -14,8 +14,8 @@ export function VideoGrid({ videos, onVideoClick }: VideoGridProps) {
       {videos.map((video) => (
         <div
           key={video.id}
-          className="group cursor-pointer"
           onClick={() => onVideoClick?.(video.id)}
+          className="group cursor-pointer"
         >
           {/* Card Container */}
           <div className="bg-gray-800 rounded-lg overflow-hidden transition-transform duration-200 hover:-translate-y-1 hover:shadow-xl">
