@@ -32,31 +32,34 @@ declare module 'dplayer' {
     preload?: string;
     volume?: number;
     playbackSpeed?: number[];
+    logo?: string;
+    video_type?: string;
     contextmenu?: Array<{
       text: string;
       link?: string;
       click?: (player: DPlayer) => void;
     }>;
-    highlight?: Array<{
-      time: number;
-      text: string;
-    }>;
+    mutex?: boolean;
+    pluginOptions?: Record<string, unknown>;
+  }
+
+  export interface DPlayerEvents {
+    play: () => void;
+    pause: () => void;
+    loadstart: () => void;
+    loadeddata: () => void;
+    canplay: () => void;
+    playing: () => void;
+    ended: () => void;
+    error: () => void;
+    timeupdate: () => void;
   }
 
   export default class DPlayer {
     constructor(options: DPlayerOptions);
-    play(): void;
-    pause(): void;
-    seek(time: number): void;
-    toggle(): void;
-    on(event: string, handler: (...args: any[]) => void): void;
+    on<K extends keyof DPlayerEvents>(event: K, handler: DPlayerEvents[K]): void;
     destroy(): void;
-    volume(percentage: number, nonotice: boolean): void;
+    seek(time: number): void;
     video: HTMLVideoElement;
-    danmaku: any;
-    fullScreen: {
-      request: (type?: string) => void;
-      cancel: (type?: string) => void;
-    };
   }
 } 

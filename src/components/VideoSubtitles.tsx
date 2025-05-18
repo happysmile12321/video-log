@@ -28,13 +28,13 @@ export function VideoSubtitles({ subtitles, onTimeClick, currentTime = 0 }: Vide
   };
 
   // Group subtitles by speaker
-  const subtitlesBySpeaker = subtitles.reduce<Record<string, Subtitle[]>>((acc, subtitle) => {
+  const subtitlesBySpeaker = subtitles.reduce((acc, subtitle) => {
     if (!acc[subtitle.speaker]) {
       acc[subtitle.speaker] = [];
     }
     acc[subtitle.speaker].push(subtitle);
     return acc;
-  }, {});
+  }, {} as Record<string, Subtitle[]>);
 
   return (
     <ScrollArea className="h-full">

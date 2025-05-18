@@ -1,10 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Tabs } from '@/components/ui/Tabs';
 import { ScrollArea } from '@/components/ui/ScrollArea';
-import Image from 'next/image';
 import { 
   DocumentTextIcon, 
-  ListBulletIcon, 
   DocumentDuplicateIcon,
   MapIcon,
   ChatBubbleLeftRightIcon,
@@ -78,8 +76,8 @@ export function VideoContent({
     return paragraphs;
   };
 
-  const handleScroll = (event: any) => {
-    const scrollTop = event.target.scrollTop;
+  const handleScroll = (event: React.UIEvent<HTMLElement>) => {
+    const scrollTop = event.currentTarget.scrollTop;
     setShowBackToTop(scrollTop > 200);
   };
 

@@ -29,6 +29,30 @@ export const BilibiliPlayer = forwardRef<BilibiliPlayerHandle, BilibiliPlayerPro
     const [isLoading, setIsLoading] = useState(true);
     const [currentChapter, setCurrentChapter] = useState<string | null>(null);
 
+    // 处理章节点击
+    const handleChapterClick = (timeString: string) => {
+      if (!playerRef.current) return;
+      
+      const [minutes, seconds] = timeString.split(':').map(Number);
+      const totalSeconds = minutes * 60 + seconds;
+      
+      try {
+        playerRef.current.seek(totalSeconds);
+        setCurrentChapter(timeString);
+      } catch (error) {
+        console.error('Failed to seek:', error);
+      }
+    };
+
+    // 暴露方法给父组件
+    useEffect(() => {
+      if (ref && typeof ref === 'object') {
+        ref.current = {
+          handleChapterClick
+        };
+      }
+    }, [ref, handleChapterClick]);
+
     useEffect(() => {
       if (!containerRef.current) return;
 
@@ -75,26 +99,7 @@ export const BilibiliPlayer = forwardRef<BilibiliPlayerHandle, BilibiliPlayerPro
           playerRef.current.destroy();
         }
       };
-    }, [videoUrl, onTimeUpdate]);
-
-    const handleMessage = useCallback((event: MessageEvent) => {
-      // ... rest of the component ...
-    }, [onTimeUpdate]);
-
-    // 处理章节点击
-    const handleChapterClick = (timeString: string) => {
-      if (!playerRef.current) return;
-      
-      const [minutes, seconds] = timeString.split(':').map(Number);
-      const totalSeconds = minutes * 60 + seconds;
-      
-      try {
-        playerRef.current.seek(totalSeconds);
-        setCurrentChapter(timeString);
-      } catch (error) {
-        console.error('Failed to seek:', error);
-      }
-    };
+    }, [videoUrl]);
 
     return (
       <div className="flex flex-1">
