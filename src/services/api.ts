@@ -71,6 +71,8 @@ export interface VideoDetail extends Video {
     tags: string[];
   }[];
   thoughts: string[];
+  transcript?: string;
+  mindmap?: string;
 }
 
 // 视频列表响应类型

@@ -6,6 +6,9 @@ import { VideoPlayer } from '@/components/VideoPlayer';
 import { VideoChapters } from '@/components/VideoChapters';
 import { getVideoDetail } from '@/services/api';
 import type { VideoDetail } from '@/services/api';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/ScrollArea';
+import { VideoContent } from '@/components/VideoContent';
 
 export default function VideoDetailPage() {
   const params = useParams();
@@ -13,6 +16,20 @@ export default function VideoDetailPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [leftWidth, setLeftWidth] = useState(40); // 初始宽度40%
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isMobileView, setIsMobileView] = useState(false);
+
+  useEffect(() => {
+    const checkMobileView = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    
+    checkMobileView();
+    window.addEventListener('resize', checkMobileView);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobileView);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchVideoDetail = async () => {
@@ -26,8 +43,9 @@ export default function VideoDetailPage() {
 
   // 处理拖拽
   const handleMouseDown = useCallback(() => {
+    if (isMobileView) return;
     setIsDragging(true);
-  }, []);
+  }, [isMobileView]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -35,7 +53,7 @@ export default function VideoDetailPage() {
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (!isDragging || !containerRef.current) return;
+      if (!isDragging || !containerRef.current || isMobileView) return;
 
       const container = containerRef.current;
       const containerRect = container.getBoundingClientRect();
@@ -46,7 +64,7 @@ export default function VideoDetailPage() {
       const newLeftWidth = Math.min(Math.max((mouseX / containerWidth) * 100, 30), 60);
       setLeftWidth(newLeftWidth);
     },
-    [isDragging]
+    [isDragging, isMobileView]
   );
 
   useEffect(() => {
@@ -79,19 +97,25 @@ export default function VideoDetailPage() {
         </div>
       </div>
 
-      {/* 两列内容区域 */}
-      <div 
+      {/* 内容区域 */}
+      <div
         ref={containerRef}
-        className="flex gap-4 px-4 relative max-w-7xl mx-auto"
-        style={{ 
+        className={cn(
+          "max-w-7xl mx-auto px-4",
+          isMobileView ? "block" : "flex gap-4 relative"
+        )}
+        style={isMobileView ? undefined : { 
           cursor: isDragging ? 'col-resize' : 'auto',
           height: 'calc(100vh - 116px)' // 减去标题区域的高度
         }}
       >
         {/* 左列 - 视频和章节 */}
         <div 
-          className="space-y-4 h-full flex flex-col"
-          style={{ width: `${leftWidth}%` }}
+          className={cn(
+            "space-y-4",
+            isMobileView ? "mb-4" : "h-full flex flex-col"
+          )}
+          style={isMobileView ? undefined : { width: `${leftWidth}%` }}
         >
           {/* 视频播放器 */}
           <div className="aspect-video bg-black rounded-lg overflow-hidden flex-shrink-0">
@@ -99,81 +123,58 @@ export default function VideoDetailPage() {
           </div>
 
           {/* 章节列表 */}
-          <div className="bg-gray-800 rounded-lg p-4 flex-1 overflow-y-auto">
+          <div className={cn(
+            "bg-gray-800 rounded-lg p-4",
+            isMobileView ? "max-h-[300px]" : "flex-1"
+          )}>
             <h2 className="text-white font-medium mb-4 sticky top-0 bg-gray-800 py-2">章节列表</h2>
-            <div className="space-y-2">
-              {videoDetail.chapters.map((chapter) => (
-                <button
-                  key={chapter.id}
-                  className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded-lg"
-                >
-                  <div className="flex items-center">
-                    <span className="text-gray-500 w-12">{chapter.time}</span>
-                    <span className="flex-1 truncate">{chapter.title}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 拖拽条 */}
-        <div
-          className="w-1 bg-gray-700 hover:bg-blue-500 cursor-col-resize relative group h-full"
-          onMouseDown={handleMouseDown}
-        >
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-8 bg-gray-700 group-hover:bg-blue-500 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-0.5 h-4 bg-gray-400 rounded mx-0.5"></div>
-              <div className="w-0.5 h-4 bg-gray-400 rounded mx-0.5"></div>
-            </div>
-          </div>
-        </div>
-
-        {/* 右列 - 亮点和思考 */}
-        <div 
-          className="h-full overflow-y-auto pr-4"
-          style={{ width: `${100 - leftWidth}%` }}
-        >
-          <div className="space-y-6">
-            {/* 亮点总结 */}
-            {videoDetail.highlights.map((highlight, index) => (
-              <div key={index} className="bg-gray-800 rounded-lg p-6">
-                <h3 className="text-lg font-medium text-white mb-4">
-                  {highlight.title}
-                </h3>
-                <p className="text-gray-300 mb-4 leading-relaxed">
-                  {highlight.content}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {highlight.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-3 py-1 bg-gray-700 text-sm text-blue-400 rounded-full"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            {/* 思考问题 */}
-            <div className="bg-gray-800 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-white mb-4">思考</h3>
-              <ul className="space-y-3">
-                {videoDetail.thoughts.map((thought, index) => (
-                  <li
-                    key={index}
-                    className="flex items-center text-gray-300 hover:text-white"
+            <ScrollArea>
+              <div className="space-y-2">
+                {videoDetail.chapters.map((chapter) => (
+                  <button
+                    key={chapter.id}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded-lg"
                   >
-                    <span className="mr-3">•</span>
-                    {thought}
-                  </li>
+                    <div className="flex items-center">
+                      <span className="text-gray-500 w-12">{chapter.time}</span>
+                      <span className="flex-1 truncate">{chapter.title}</span>
+                    </div>
+                  </button>
                 ))}
-              </ul>
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+
+        {/* 拖拽条 - 仅在非移动端显示 */}
+        {!isMobileView && (
+          <div
+            className="w-1 bg-gray-700 hover:bg-blue-500 cursor-col-resize relative group h-full"
+            onMouseDown={handleMouseDown}
+          >
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-8 bg-gray-700 group-hover:bg-blue-500 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-0.5 h-4 bg-gray-400 rounded mx-0.5"></div>
+                <div className="w-0.5 h-4 bg-gray-400 rounded mx-0.5"></div>
+              </div>
             </div>
           </div>
+        )}
+
+        {/* 右列 - 内容区域 */}
+        <div 
+          className={cn(
+            "space-y-4",
+            isMobileView ? "" : "h-full pr-4"
+          )}
+          style={isMobileView ? undefined : { width: `${100 - leftWidth}%` }}
+        >
+          <VideoContent
+            highlights={videoDetail.highlights}
+            thoughts={videoDetail.thoughts}
+            transcript={videoDetail.transcript}
+            mindmap={videoDetail.mindmap}
+          />
         </div>
       </div>
     </div>
