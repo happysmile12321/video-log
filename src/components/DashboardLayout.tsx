@@ -17,12 +17,12 @@ interface MenuItem {
 
 // 左侧菜单项配置
 export const menuItems: MenuItem[] = [
-  { id: 'home', label: '首页', icon: '🏠', path: '/dashboard' },
+  // { id: 'home', label: '首页', icon: '🏠', path: '/dashboard' },
   { id: 'knowledge', label: '知 - 资源库', icon: '📚', path: '/knowledge' },
-  { id: 'action', label: '行 - 提示词', icon: '🎯', count: 3, path: '/action' },
-  { id: 'tags', label: '标签', icon: '#️⃣', path: '/tags' },
-  { id: 'subscription', label: '订阅', icon: '🔔', path: '/subscription' },
-  { id: 'explore', label: '探索', icon: '🔍', path: '/explore' }
+  // { id: 'action', label: '行 - 提示词', icon: '🎯', count: 3, path: '/action' },
+  // { id: 'tags', label: '标签', icon: '#️⃣', path: '/tags' },
+  // { id: 'subscription', label: '订阅', icon: '🔔', path: '/subscription' },
+  // { id: 'explore', label: '探索', icon: '🔍', path: '/explore' }
 ];
 
 interface DashboardLayoutProps {

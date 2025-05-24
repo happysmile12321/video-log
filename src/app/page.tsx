@@ -14,7 +14,7 @@ export default function Home() {
     // 确保代码只在客户端运行
     if (typeof window !== 'undefined') {
       if (userInfo) {
-        router.replace('/dashboard');
+        router.replace('/knowledge');
       }
       setIsLoading(false);
     }
