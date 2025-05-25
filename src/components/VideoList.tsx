@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Video } from '@/services/api';
+import { Video, getVideoDetail } from '@/services/api';
 import { VideoGrid } from './VideoGrid';
 import { Squares2X2Icon as ViewGridIcon, ListBulletIcon as ViewListIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
@@ -27,8 +27,11 @@ export function VideoList({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const router = useRouter();
 
-  const handleVideoClick = (videoId: string) => {
-    router.push(`/knowledge/${videoId}`);
+  const handleVideoClick = async (videoId: string) => {
+    const videoDetail = await getVideoDetail(videoId);
+    if (videoDetail) {
+      router.push(`/knowledge/${videoId}`);
+    }
   };
 
   return (

@@ -115,133 +115,58 @@ export default function VideoDetailPage() {
             </aside>
           )}
 
-          {/* 主要内容区域 */}
-          <div className="flex-1 min-w-0">
-            {!isMobileView ? (
-              <Resizer defaultRatio={0.4} minRatio={0.3} maxRatio={0.7}>
-                {/* 左侧：视频播放器和聊天区域 */}
-                <div className="h-full flex flex-col gap-4">
-                  {/* 视频播放器 */}
-                  <div className="flex-none">
-                    <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                      <VideoPlayer
-                        ref={videoPlayerRef}
-                        videoUrl={videoDetail.videoUrl}
-                        chapters={videoDetail.chapters}
-                        onTimeUpdate={setCurrentTime}
-                      />
-                    </div>
-                  </div>
-                  {/* 聊天区域 */}
-                  <div className="flex-1 min-h-0 bg-gray-800 rounded-lg overflow-hidden">
-                    <VideoChat className="h-full" />
-                  </div>
-                </div>
-
-                {/* 右侧：内容区域 */}
-                <div className="h-full pl-4">
-                  <div className="h-full bg-gray-800 rounded-lg overflow-hidden">
-                    <VideoContent
-                      highlights={videoDetail.highlights}
-                      thoughts={videoDetail.thoughts}
-                      subtitles={videoDetail.subtitles}
-                      currentTime={currentTime}
-                      onTimeClick={handleTimeClick}
-                    />
-                  </div>
-                </div>
-              </Resizer>
-            ) : (
-              // 移动端布局
-              <div className="h-full flex flex-col gap-4">
-                {/* 移动端标题 */}
-                <div className="flex-none bg-gray-800 rounded-lg p-4">
-                  <Tooltip content={videoDetail.title}>
-                    <h1 className="text-lg font-bold text-white mb-2">
-                      {videoDetail.title}
-                    </h1>
-                  </Tooltip>
-                  <div className="flex flex-wrap gap-2 text-xs text-gray-400">
-                    <span>发布于 {videoDetail.publishedAt}</span>
-                    <span>时长 {videoDetail.duration}</span>
-                    <span>更新于 {videoDetail.updatedAt}</span>
-                  </div>
-                </div>
-
-                {/* 移动端章节切换按钮 */}
-                {!showChapters && (
-                  <button
-                    onClick={() => setShowChapters(true)}
-                    className="flex-none bg-gray-800 text-gray-400 hover:text-white p-2 rounded-lg flex items-center justify-center"
-                  >
-                    <ChevronRightIcon className="w-5 h-5" />
-                    <span className="ml-2">显示章节列表</span>
-                  </button>
-                )}
-
-                {/* 移动端章节列表 */}
-                {showChapters && (
-                  <div className="flex-none h-80 bg-gray-800 rounded-lg p-4 overflow-hidden">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-medium text-white">章节列表</h2>
-                      <button
-                        onClick={() => setShowChapters(false)}
-                        className="text-gray-400 hover:text-white"
-                      >
-                        <ChevronLeftIcon className="w-5 h-5" />
-                      </button>
-                    </div>
-                    <div className="h-[calc(100%-3rem)] overflow-y-auto">
-                      <div className="space-y-2">
-                        {videoDetail.chapters.map((chapter) => (
-                          <Tooltip key={chapter.id} content={chapter.title}>
-                            <div
-                              className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded-lg cursor-pointer"
-                              onClick={() => handleChapterClick(chapter.time)}
-                            >
-                              <div className="flex items-center">
-                                <span className="text-gray-500 w-12">{chapter.time}</span>
-                                <span className="flex-1 truncate">{chapter.title}</span>
-                              </div>
-                            </div>
-                          </Tooltip>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 视频播放器 */}
-                <div className="flex-none">
-                  <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                    <VideoPlayer
-                      ref={videoPlayerRef}
-                      videoUrl={videoDetail.videoUrl}
-                      chapters={videoDetail.chapters}
-                    />
-                  </div>
-                </div>
-
-                {/* 聊天区域 */}
-                <div className="flex-1 min-h-0 bg-gray-800 rounded-lg overflow-hidden">
-                  <VideoChat className="h-full" />
-                </div>
-
-                {/* 内容区域 */}
-                <div className="flex-none bg-gray-800 rounded-lg overflow-hidden">
-                  <VideoContent
-                    highlights={videoDetail.highlights}
-                    thoughts={videoDetail.thoughts}
-                    subtitles={videoDetail.subtitles}
-                    currentTime={currentTime}
-                    onTimeClick={handleTimeClick}
-                  />
-                </div>
+          {/* 中间区域：视频播放器和聊天 */}
+          <div className="flex-1 min-w-0 flex flex-col gap-4">
+            {/* 视频播放器 */}
+            <div className="flex-none">
+              <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                <VideoPlayer
+                  ref={videoPlayerRef}
+                  videoUrl={videoDetail.videoUrl}
+                  chapters={videoDetail.chapters}
+                  onTimeUpdate={setCurrentTime}
+                />
               </div>
-            )}
+            </div>
+            {/* 聊天区域 */}
+            <div className="flex-1 min-h-0 bg-gray-800 rounded-lg overflow-hidden">
+              <VideoChat className="h-full" />
+            </div>
+          </div>
+
+          {/* 右侧内容区域 */}
+          <div className="w-80 flex-shrink-0 bg-gray-800 rounded-lg overflow-hidden">
+            <VideoContent
+              highlights={videoDetail.highlights}
+              thoughts={videoDetail.thoughts}
+              subtitles={videoDetail.subtitles}
+              currentTime={currentTime}
+              onTimeClick={handleTimeClick}
+            />
           </div>
         </div>
       </main>
+
+      {/* 移动端底部导航 */}
+      {isMobileView && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 p-2">
+          <div className="flex justify-around">
+            <button
+              onClick={() => setShowChapters(true)}
+              className="flex items-center text-gray-400 hover:text-white"
+            >
+              <ChevronRightIcon className="w-5 h-5" />
+              <span className="ml-1">章节</span>
+            </button>
+            <button className="flex items-center text-gray-400 hover:text-white">
+              <span>聊天</span>
+            </button>
+            <button className="flex items-center text-gray-400 hover:text-white">
+              <span>内容</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

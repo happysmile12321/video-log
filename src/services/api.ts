@@ -4,7 +4,7 @@ const API_BASE = 'https://open.feishu.cn/anycross/trigger/callback';
 // API 端点
 export const API_ENDPOINTS = {
   KNOWLEDGE_TYPES: 'MDUwYTI4NGM4MWFlMjcwZDE1NzMyYTY4Yzc2NWZiZTZm',
-  VIDEO_LIST: 'video-list',
+  VIDEO_LIST: 'MGNhYjhhMDJhNzI3ZGMzNGVmNGU3ZjIyOWU1MjJjZWE0',
   VIDEO_DETAIL: 'video-detail',
 } as const;
 
@@ -132,15 +132,57 @@ export async function getVideoList(params: {
   pageSize: number;
   type?: string;
 }): Promise<VideoListResponse> {
-  // 模拟分页
-  const start = (params.page - 1) * params.pageSize;
-  const end = start + params.pageSize;
-  const items = mockVideos.slice(start, end);
+  const response = await fetchAPI<{
+    total: number;
+    has_more: boolean;
+    items: Array<{
+      record_id: string;
+      fields: {
+        封面图: Array<{
+          url: string;
+          name: string;
+          file_token: string;
+          type: string;
+          size: number;
+          tmp_url: string;
+        }>;
+        时间: number;
+        标题: Array<{
+          text: string;
+          type: string;
+        }>;
+        视频时长: Array<{
+          text: string;
+          type: string;
+        }>;
+      };
+    }>;
+  }>(API_ENDPOINTS.VIDEO_LIST);
+
+  // Transform the response to match our Video interface
+  const videos: Video[] = response.items.map(item => ({
+    id: item.record_id,
+    title: item.fields.标题[0].text,
+    thumbnail: item.fields.封面图[0].url,
+    duration: item.fields.视频时长[0].text,
+    publishedAt: new Date(item.fields.时间).toLocaleDateString(),
+    updatedAt: new Date(item.fields.时间).toLocaleDateString(),
+    tags: [], // Feishu API doesn't provide tags
+    summary: '', // Feishu API doesn't provide summary
+  }));
+
+  // Calculate total duration
+  const totalDuration = videos.reduce((acc, video) => {
+    const [minutes, seconds] = video.duration.split(':').map(Number);
+    return acc + minutes * 60 + seconds;
+  }, 0);
+
+  const formattedDuration = `${Math.floor(totalDuration / 60)}分${totalDuration % 60}秒`;
 
   return {
-    total: mockVideos.length,
-    totalDuration: '20分钟',
-    items,
+    total: response.total,
+    totalDuration: formattedDuration,
+    items: videos,
     currentPage: params.page,
     pageSize: params.pageSize
   };
@@ -148,11 +190,16 @@ export async function getVideoList(params: {
 
 // 获取视频详情
 export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
-  const video = mockVideos.find(v => v.id === id);
-  if (!video) return null;
-
-  return {
-    ...video,
+  // 使用 mock 数据
+  const mockVideoDetail: VideoDetail = {
+    id: '1',
+    title: '上班宫斗？独立开发？程序员的出路在哪？【阿Test正经比较】',
+    thumbnail: '/images/video1.jpg',
+    duration: '07:53',
+    publishedAt: '4 个月前',
+    updatedAt: '4 个月前',
+    tags: ['程序员', '职业发展', '内卷', '独立开发', '副业'],
+    summary: '这段视频主要探讨了程序员的职业发展路径，尤其是在"内卷"大环境下的选择。视频通过采访多位程序员，分享了他们从上班转为独立开发的经历。',
     videoUrl: '/videos/sample.mp4',
     chapters: [
       {
@@ -195,27 +242,6 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
         time: '00:30',
         speaker: '张老师',
         content: '确实，但压力同时也意味着机遇。让我们先看看当前的就业形势。'
-      },
-      {
-        id: '4',
-        timestamp: 45,
-        time: '00:45',
-        speaker: '学生B',
-        content: '我对独立开发很感兴趣，但不知道风险有多大。'
-      },
-      {
-        id: '5',
-        timestamp: 60,
-        time: '01:00',
-        speaker: '张老师',
-        content: '独立开发确实需要考虑很多因素，包括技术储备、市场需求和资金规划。'
-      },
-      {
-        id: '6',
-        timestamp: 75,
-        time: '01:15',
-        speaker: '学生C',
-        content: '听说鸿蒙系统现在机会不错，老师怎么看？'
       }
     ],
     highlights: [
@@ -228,20 +254,14 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
         title: '独立开发的机遇与挑战',
         content: '💡 想转型独立开发？这些你必须知道！独立开发需要全面考虑技术储备、市场需求和资金规划。虽然风险存在，但通过合理规划和准备，独立开发也能成为一条可行的职业道路。',
         tags: ['独立开发', '创业', '风险控制']
-      },
-      {
-        title: '新技术带来的机会',
-        content: '🚀 紧跟技术潮流，把握发展机遇！以鸿蒙系统为例，新技术的出现为程序员带来了新的发展空间。提前布局、深入学习，能够在技术变革中抢占先机。',
-        tags: ['新技术', '鸿蒙', '技术趋势']
       }
     ],
     thoughts: [
       '💭 在就业压力下，如何找准自己的发展方向？',
       '🤔 独立开发vs就业，如何权衡利弊做出选择？',
-      '📱 新技术浪潮下，程序员应该如何提前布局？',
-      '💪 面对行业变革，保持终身学习的重要性'
-    ],
-    transcript: undefined,
-    mindmap: undefined
+      '📱 新技术浪潮下，程序员应该如何提前布局？'
+    ]
   };
+
+  return mockVideoDetail;
 } 
