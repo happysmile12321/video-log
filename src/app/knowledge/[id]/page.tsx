@@ -115,35 +115,38 @@ export default function VideoDetailPage() {
             </aside>
           )}
 
-          {/* 中间区域：视频播放器和聊天 */}
-          <div className="flex-1 min-w-0 flex flex-col gap-4">
-            {/* 视频播放器 */}
-            <div className="flex-none">
-              <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                <VideoPlayer
-                  ref={videoPlayerRef}
-                  videoUrl={videoDetail.videoUrl}
-                  chapters={videoDetail.chapters}
-                  onTimeUpdate={setCurrentTime}
-                />
+          {/* 中间区域和右侧内容区域 */}
+          <Resizer defaultRatio={0.4} minRatio={0.35} maxRatio={0.45} className="flex-1">
+            {/* 视频播放器和聊天区域 */}
+            <div className="flex-1 min-w-0 flex flex-col gap-4">
+              {/* 视频播放器 */}
+              <div className="flex-none">
+                <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                  <VideoPlayer
+                    ref={videoPlayerRef}
+                    videoUrl={videoDetail.videoUrl}
+                    chapters={videoDetail.chapters}
+                    onTimeUpdate={setCurrentTime}
+                  />
+                </div>
+              </div>
+              {/* 聊天区域 */}
+              <div className="flex-1 min-h-0 bg-gray-800 rounded-lg overflow-hidden">
+                <VideoChat className="h-full" />
               </div>
             </div>
-            {/* 聊天区域 */}
-            <div className="flex-1 min-h-0 bg-gray-800 rounded-lg overflow-hidden">
-              <VideoChat className="h-full" />
-            </div>
-          </div>
 
-          {/* 右侧内容区域 */}
-          <div className="w-80 flex-shrink-0 bg-gray-800 rounded-lg overflow-hidden">
-            <VideoContent
-              highlights={videoDetail.highlights}
-              thoughts={videoDetail.thoughts}
-              subtitles={videoDetail.subtitles}
-              currentTime={currentTime}
-              onTimeClick={handleTimeClick}
-            />
-          </div>
+            {/* 右侧内容区域 */}
+            <div className="h-full bg-gray-800 rounded-lg overflow-hidden">
+              <VideoContent
+                highlights={videoDetail.highlights}
+                thoughts={videoDetail.thoughts}
+                subtitles={videoDetail.subtitles}
+                currentTime={currentTime}
+                onTimeClick={handleTimeClick}
+              />
+            </div>
+          </Resizer>
         </div>
       </main>
 
