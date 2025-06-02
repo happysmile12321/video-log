@@ -11,6 +11,8 @@ import { VideoChat } from '@/components/VideoChat';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Resizer } from '@/components/ui/Resizer';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+
 export default function VideoDetailPage() {
   const params = useParams();
   const [videoDetail, setVideoDetail] = useState<VideoDetail | null>(null);
@@ -62,6 +64,18 @@ export default function VideoDetailPage() {
       const seconds = Math.floor(timestamp % 60);
       const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       videoPlayerRef.current.handleChapterClick(timeString);
+    }
+  };
+
+  const handleDownload = () => {
+    if (videoDetail?.videoUrl) {
+      // 创建一个临时的 a 标签来触发下载
+      const link = document.createElement('a');
+      link.href = videoDetail.videoUrl;
+      link.download = `${videoDetail.title}.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -120,8 +134,11 @@ export default function VideoDetailPage() {
             {/* 视频播放器和聊天区域 */}
             <div className="flex-1 min-w-0 flex flex-col gap-4">
               {/* 视频播放器 */}
-              <div className="flex-none">
-                <div className="aspect-video bg-black rounded-lg overflow-hidden">
+              <div className="flex-none bg-black rounded-lg overflow-hidden p-4 relative group hover:shadow-2xl transition-all duration-300">
+                {/* 装饰元素 */}
+                <div className="absolute top-1/2 -right-4 w-4 h-4 bg-yellow-500 rounded-full opacity-50 animate-spin" />
+                
+                <div className="aspect-video bg-black rounded-lg overflow-hidden transform group-hover:scale-[1.02] transition-transform duration-300">
                   <VideoPlayer
                     ref={videoPlayerRef}
                     videoUrl={videoDetail.videoUrl}
@@ -129,15 +146,24 @@ export default function VideoDetailPage() {
                     onTimeUpdate={setCurrentTime}
                   />
                 </div>
+                {/* 下载按钮 */}
+                <Tooltip content="下载视频">
+                  <button
+                    onClick={handleDownload}
+                    className="absolute top-6 right-6 p-2 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors duration-200"
+                  >
+                    <ArrowDownTrayIcon className="w-5 h-5 text-white" />
+                  </button>
+                </Tooltip>
               </div>
               {/* 聊天区域 */}
-              <div className="flex-1 min-h-0 bg-gray-800 rounded-lg overflow-hidden">
+              <div className="flex-1 min-h-0 bg-gray-800 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300">
                 <VideoChat className="h-full" />
               </div>
             </div>
 
             {/* 右侧内容区域 */}
-            <div className="h-full bg-gray-800 rounded-lg overflow-hidden">
+            <div className="h-full bg-gray-800 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300">
               <VideoContent
                 highlights={videoDetail.highlights}
                 thoughts={videoDetail.thoughts}
