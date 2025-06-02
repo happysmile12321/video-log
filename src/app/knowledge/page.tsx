@@ -30,9 +30,30 @@ export default function KnowledgePage() {
           page: currentPage,
           pageSize,
         });
-        setVideoData(data);
+        // Filter out any invalid video items
+        const validVideos = data.items.filter(video => 
+          video && 
+          video.id && 
+          video.title && 
+          video.thumbnail && 
+          video.duration
+        );
+        
+        setVideoData({
+          ...data,
+          items: validVideos,
+          total: validVideos.length // Update total to reflect valid items
+        });
       } catch (error) {
         console.error('Failed to fetch videos:', error);
+        // Set empty data instead of null to prevent UI errors
+        setVideoData({
+          total: 0,
+          totalDuration: '0分0秒',
+          items: [],
+          currentPage,
+          pageSize
+        });
       } finally {
         setIsLoading(false);
       }

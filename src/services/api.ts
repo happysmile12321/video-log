@@ -160,21 +160,44 @@ export async function getVideoList(params: {
   }>(API_ENDPOINTS.VIDEO_LIST);
 
   // Transform the response to match our Video interface
-  const videos: Video[] = response.items.map(item => ({
-    id: item.record_id,
-    title: item.fields.标题[0].text,
-    thumbnail: item.fields.封面图[0].url,
-    duration: item.fields.视频时长[0].text,
-    publishedAt: new Date(item.fields.时间).toLocaleDateString(),
-    updatedAt: new Date(item.fields.时间).toLocaleDateString(),
-    tags: [], // Feishu API doesn't provide tags
-    summary: '', // Feishu API doesn't provide summary
-  }));
+  const videos: Video[] = response.items
+    .map(item => {
+      try {
+        // Check if required fields exist and have valid data
+        if (!item.fields?.标题?.[0]?.text ||
+            !item.record_id ||
+            !item.fields?.时间) {
+          console.warn('Skipping invalid video item:', item);
+          return null;
+        }
+
+        const video: Video = {
+          id: item.record_id,
+          title: item.fields.标题[0].text,
+          thumbnail: item.fields?.封面图?.[0]?.url || '/images/default-thumbnail.jpg',
+          duration: item.fields?.视频时长?.[0]?.text || '00:00',
+          publishedAt: new Date(item.fields.时间).toLocaleDateString(),
+          updatedAt: new Date(item.fields.时间).toLocaleDateString(),
+          tags: [], // Feishu API doesn't provide tags
+          summary: '', // Feishu API doesn't provide summary
+        };
+        return video;
+      } catch (error) {
+        console.warn('Error processing video item:', error);
+        return null;
+      }
+    })
+    .filter((video): video is Video => video !== null); // Remove null items
 
   // Calculate total duration
   const totalDuration = videos.reduce((acc, video) => {
-    const [minutes, seconds] = video.duration.split(':').map(Number);
-    return acc + minutes * 60 + seconds;
+    try {
+      const [minutes, seconds] = video.duration.split(':').map(Number);
+      return acc + (minutes * 60 + seconds);
+    } catch (error) {
+      console.warn('Error calculating duration for video:', video.id);
+      return acc;
+    }
   }, 0);
 
   const formattedDuration = `${Math.floor(totalDuration / 60)}分${totalDuration % 60}秒`;
