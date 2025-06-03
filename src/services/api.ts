@@ -214,56 +214,57 @@ export async function getVideoList(params: {
 // 获取视频详情
 export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
   try {
-    const response = await fetchAPI<{
-      records: Array<{
-        record_id: string;
-        fields: {
-          总结摘要: Array<{
-            type: number;
-            value: Array<{
-              text: string;
-              type: string;
-            }>;
-          }>;
-          时间: number;
-          标签: string[];
-          标题: Array<{
-            text: string;
-            type: string;
-          }>;
-          章节列表提取: Array<{
-            text: string;
-            type: string;
-          }>;
-          视频时长: Array<{
-            text: string;
-            type: string;
-          }>;
-          字幕: Array<{
+    const response = await fetchAPI<Array<{
+      record_id: string;
+      fields: {
+        ID: string;
+        总结摘要: {
+          type: number;
+          value: Array<{
             text: string;
             type: string;
           }>;
         };
-      }>;
-    }>(API_ENDPOINTS.VIDEO_DETAIL, {
+        时间: number;
+        标签: string[];
+        标题: Array<{
+          text: string;
+          type: string;
+        }>;
+        章节列表提取: Array<{
+          text: string;
+          type: string;
+        }>;
+        视频时长: Array<{
+          text: string;
+          type: string;
+        }>;
+        字幕: Array<{
+          text: string;
+          type: string;
+        }>;
+      };
+    }>>(API_ENDPOINTS.VIDEO_DETAIL, {
       method: 'POST',
       body: JSON.stringify({ recordId: id }),
     });
 
+    console.log('原始 API 响应:', JSON.stringify(response, null, 2));
+
     // 检查响应是否有效
-    if (!response || !response.records || !Array.isArray(response.records) || response.records.length === 0) {
+    if (!Array.isArray(response) || response.length === 0) {
       console.error('Invalid API response:', response);
       return null;
     }
 
-    const record = response.records[0];
-    
-    if (!record || !record.fields) {
+    const record = response[0];
+    if (!record?.fields) {
       console.error('Invalid record data:', record);
       return null;
     }
 
     const fields = record.fields;
+    console.log('处理后的字段数据:', JSON.stringify(fields, null, 2));
     
     // 检查必要字段是否存在
     if (!fields['标题']?.[0]?.text || !record.record_id) {
@@ -274,27 +275,51 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
     // Parse chapters from 章节列表提取
     const chaptersText = fields['章节列表提取']?.[0]?.text || '';
     const chapters = parseChapters(chaptersText);
+    console.log('解析后的章节数据:', JSON.stringify(chapters, null, 2));
 
     // Parse subtitles
     const subtitlesText = fields['字幕']?.[0]?.text || '';
     const subtitles = parseSubtitles(subtitlesText);
+    console.log('解析后的字幕数据:', JSON.stringify(subtitles, null, 2));
+
+    // 处理时间戳
+    const timestamp = fields['时间'];
+    const date = timestamp ? new Date(timestamp) : null;
+    const formattedDate = date ? date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }) : '未知';
 
     // Create video detail object with safe fallbacks
     const videoDetail: VideoDetail = {
       id: record.record_id,
       title: fields['标题'][0].text,
-      thumbnail: '/images/default-thumbnail.jpg', // Default thumbnail
+      thumbnail: '/images/default-thumbnail.jpg',
       duration: fields['视频时长']?.[0]?.text || '00:00',
-      publishedAt: fields['时间'] ? new Date(fields['时间']).toLocaleDateString() : '未知',
-      updatedAt: fields['时间'] ? new Date(fields['时间']).toLocaleDateString() : '未知',
+      publishedAt: formattedDate,
+      updatedAt: formattedDate,
       tags: fields['标签'] || [],
-      summary: fields['总结摘要']?.[0]?.value?.[0]?.text || '',
-      videoUrl: '/videos/sample.mp4', // Default video URL
+      summary: fields['总结摘要']?.value?.[0]?.text || '',
+      videoUrl: '/videos/sample.mp4',
       chapters,
       subtitles,
-      highlights: [], // No highlights in the new API response
-      thoughts: [], // No thoughts in the new API response
+      highlights: [
+        {
+          title: '内容概述',
+          content: fields['总结摘要']?.value?.[0]?.text || '暂无内容概述',
+          tags: fields['标签'] || []
+        },
+        ...(fields['总结摘要']?.value?.slice(1) || []).map((item, index) => ({
+          title: `要点 ${index + 1}`,
+          content: item.text,
+          tags: []
+        }))
+      ],
+      thoughts: fields['总结摘要']?.value?.slice(1)?.map(item => item.text) || [],
     };
+
+    console.log('最终处理后的视频详情数据:', JSON.stringify(videoDetail, null, 2));
 
     return videoDetail;
   } catch (error) {
@@ -305,29 +330,55 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
 
 // Helper function to parse chapters from text
 function parseChapters(chaptersText: string) {
+  console.log('原始章节文本:', chaptersText);
+  
   const lines = chaptersText.split('\n');
   const chapters = [];
   let currentChapter = null;
+  let chapterCounter = 1;
 
   for (const line of lines) {
     const trimmedLine = line.trim();
     if (!trimmedLine) continue;
 
-    // Match chapter pattern like "1. Chapter Title (00:00:00~00:01:23)"
-    const chapterMatch = trimmedLine.match(/^(\d+)\.\s+(.+?)\s+\((\d{2}:\d{2}:\d{2})~(\d{2}:\d{2}:\d{2})\)/);
+    // 匹配多种章节格式
+    // 1. "1. Chapter Title (00:00:00~00:01:23)"
+    // 2. "00:00:00 Chapter Title"
+    // 3. "Chapter Title - 00:00:00"
+    // 4. "1. Chapter Title - 00:00:00"
+    const chapterMatch = trimmedLine.match(
+      /^(?:(\d+)\.\s*)?(.+?)(?:\s*[-~]\s*|\s*\()(\d{2}:\d{2}:\d{2})(?:\)|$)/i
+    );
+
     if (chapterMatch) {
       if (currentChapter) {
         chapters.push(currentChapter);
       }
+
+      // 确保时间格式统一为 HH:MM:SS
+      const timeParts = chapterMatch[3].split(':').map(Number);
+      let formattedTime = chapterMatch[3];
+      
+      // 如果是 MM:SS 格式，转换为 HH:MM:SS
+      if (timeParts.length === 2) {
+        formattedTime = `00:${chapterMatch[3]}`;
+      }
+
       currentChapter = {
-        id: chapterMatch[1],
-        time: chapterMatch[3],
-        title: chapterMatch[2],
+        id: `chapter-${chapterCounter++}`,
+        time: formattedTime,
+        title: chapterMatch[2].trim(),
         content: '',
       };
+      console.log('解析到新章节:', currentChapter);
     } else if (currentChapter && trimmedLine.startsWith('   - ')) {
-      // Sub-chapter
+      // 子章节内容
       currentChapter.content += trimmedLine.substring(5) + '\n';
+      console.log('添加子章节内容:', trimmedLine.substring(5));
+    } else if (currentChapter) {
+      // 其他内容作为当前章节的补充
+      currentChapter.content += trimmedLine + '\n';
+      console.log('添加章节补充内容:', trimmedLine);
     }
   }
 
@@ -335,6 +386,7 @@ function parseChapters(chaptersText: string) {
     chapters.push(currentChapter);
   }
 
+  console.log('最终解析的章节列表:', chapters);
   return chapters;
 }
 

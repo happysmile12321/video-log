@@ -190,15 +190,15 @@ export default function VideoDetailPage() {
                 {/* 章节列表 */}
                 <div className="flex-1 min-h-0 px-4 pb-4">
                   <ScrollArea className="h-full">
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {videoDetail.chapters.map((chapter) => (
                         <Tooltip key={chapter.id} content={chapter.title}>
                           <div
-                            className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded-lg cursor-pointer"
+                            className="w-full text-left px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors duration-200"
                             onClick={() => handleChapterClick(chapter.time)}
                           >
-                            <div className="flex items-center">
-                              <span className="text-gray-500 w-12">{chapter.time}</span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs text-gray-500 font-mono tabular-nums">{chapter.time}</span>
                               <span className="flex-1 truncate">{chapter.title}</span>
                             </div>
                           </div>

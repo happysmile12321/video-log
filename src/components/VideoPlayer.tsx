@@ -131,8 +131,21 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const handleChapterClick = useCallback((timeString: string) => {
       if (!playerRef.current) return;
       
-      const [minutes, seconds] = timeString.split(':').map(Number);
-      const totalSeconds = minutes * 60 + seconds;
+      // Split the time string into parts
+      const timeParts = timeString.split(':').map(Number);
+      
+      // Calculate total seconds based on the number of parts
+      let totalSeconds = 0;
+      if (timeParts.length === 3) {
+        // HH:MM:SS format
+        totalSeconds = timeParts[0] * 3600 + timeParts[1] * 60 + timeParts[2];
+      } else if (timeParts.length === 2) {
+        // MM:SS format
+        totalSeconds = timeParts[0] * 60 + timeParts[1];
+      } else {
+        console.error('Invalid time format:', timeString);
+        return;
+      }
       
       try {
         playerRef.current.currentTime = totalSeconds;

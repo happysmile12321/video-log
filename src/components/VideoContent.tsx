@@ -256,11 +256,33 @@ export function VideoContent({
       <div className="flex-1 mt-2 sm:mt-4 min-h-0">
         {activeTab === 'subtitles' && (
           <div className="h-full bg-gray-800 rounded-lg">
-            <VideoSubtitles
-              subtitles={subtitles}
-              currentTime={currentTime}
-              onTimeClick={onTimeClick}
-            />
+            <ScrollArea className="h-full">
+              <div className="p-4 sm:p-6 space-y-4">
+                {getMergedSubtitles().map((paragraph, index) => (
+                  <div 
+                    key={index}
+                    className="bg-gray-700/50 rounded-lg p-4 space-y-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => onTimeClick(paragraph.startTime)}
+                        className="text-sm text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                      >
+                        {paragraph.time}
+                      </button>
+                      {paragraph.speaker && (
+                        <span className="text-sm text-gray-400">
+                          {paragraph.speaker}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-200 text-base leading-relaxed whitespace-pre-line">
+                      {paragraph.content.join(' ')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         )}
 
@@ -274,99 +296,139 @@ export function VideoContent({
               <div className="p-4 sm:p-6 space-y-8">
                 {/* 摘要部分 */}
                 <div className="space-y-4">
-                  <h2 className="text-xl font-bold text-white">📝 内容速览</h2>
-                  <div className="bg-gray-700/50 rounded-lg p-4">
-                    <p className="text-gray-200 text-sm leading-relaxed">
-                      {highlights[0]?.content}
-                    </p>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <span>📝</span>
+                    <span>内容速览</span>
+                  </h2>
+                  <div className="bg-gray-700/50 rounded-lg p-6">
+                    <div className="prose prose-invert max-w-none">
+                      {highlights.length > 0 ? (
+                        <div className="space-y-4">
+                          <p className="text-gray-200 text-base leading-relaxed whitespace-pre-line">
+                            {highlights[0].content}
+                          </p>
+                          {highlights[0].tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-2">
+                              {highlights[0].tags.map(tag => (
+                                <span 
+                                  key={tag}
+                                  className="text-xs px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-gray-400 italic">暂无内容摘要</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* 亮点部分 */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold text-white">✨ 精彩亮点</h2>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {highlights.map((highlight, index) => (
-                      <div 
-                        key={index}
-                        className="bg-gray-700/50 rounded-lg p-4 space-y-2"
-                      >
-                        <h3 className="text-white font-medium">{highlight.title}</h3>
-                        <p className="text-gray-300 text-sm">{highlight.content}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {highlight.tags.map(tag => (
-                            <span 
-                              key={tag}
-                              className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded-full"
-                            >
-                              #{tag}
-                            </span>
-                          ))}
+                {highlights.length > 1 && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <span>✨</span>
+                      <span>精彩亮点</span>
+                    </h2>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {highlights.slice(1).map((highlight, index) => (
+                        <div 
+                          key={index}
+                          className="bg-gray-700/50 rounded-lg p-6 space-y-3"
+                        >
+                          <h3 className="text-white font-medium text-lg">{highlight.title}</h3>
+                          <p className="text-gray-300 text-base leading-relaxed whitespace-pre-line">{highlight.content}</p>
+                          {highlight.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-2">
+                              {highlight.tags.map(tag => (
+                                <span 
+                                  key={tag}
+                                  className="text-xs px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* 思考启发 */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold text-white">💡 思考启发</h2>
-                  <div className="bg-gray-700/50 rounded-lg p-4">
-                    <ul className="space-y-3">
-                      {thoughts.map((thought, index) => (
-                        <li 
-                          key={index}
-                          className="flex items-start text-gray-200"
-                        >
-                          <span className="mr-2 text-blue-400">•</span>
-                          <span className="text-sm">{thought}</span>
-                        </li>
-                      ))}
-                    </ul>
+                {thoughts.length > 0 && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <span>💡</span>
+                      <span>思考启发</span>
+                    </h2>
+                    <div className="bg-gray-700/50 rounded-lg p-6">
+                      <ul className="space-y-4">
+                        {thoughts.map((thought, index) => (
+                          <li 
+                            key={index}
+                            className="flex items-start text-gray-200"
+                          >
+                            <span className="mr-3 text-blue-400 text-lg">•</span>
+                            <span className="text-base leading-relaxed whitespace-pre-line">{thought}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* 章节总结 */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold text-white">📚 章节内容</h2>
+                {subtitles.length > 0 && (
                   <div className="space-y-4">
-                    {subtitles.reduce((acc: Array<React.ReactElement>, subtitle, index, array) => {
-                      // 每5条字幕总结为一个章节
-                      if (index % 5 === 0) {
-                        const sectionSubtitles = array.slice(index, index + 5);
-                        const sectionContent = sectionSubtitles
-                          .map(s => s.content)
-                          .join(' ');
-                        const endSubtitle = array[Math.min(index + 4, array.length - 1)];
-                        
-                        acc.push(
-                          <div 
-                            key={subtitle.id}
-                            className="bg-gray-700/50 rounded-lg p-4 space-y-2"
-                          >
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => onTimeClick(subtitle.timestamp)}
-                                className="text-sm text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                              >
-                                {subtitle.time}
-                              </button>
-                              <span className="text-gray-500">-</span>
-                              <button
-                                onClick={() => onTimeClick(endSubtitle.timestamp)}
-                                className="text-sm text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                              >
-                                {endSubtitle.time}
-                              </button>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <span>📚</span>
+                      <span>章节内容</span>
+                    </h2>
+                    <div className="space-y-4">
+                      {subtitles.reduce((acc: Array<React.ReactElement>, subtitle, index, array) => {
+                        // 每5条字幕总结为一个章节
+                        if (index % 5 === 0) {
+                          const sectionSubtitles = array.slice(index, index + 5);
+                          const sectionContent = sectionSubtitles
+                            .map(s => s.content)
+                            .join(' ');
+                          const endSubtitle = array[Math.min(index + 4, array.length - 1)];
+                          
+                          acc.push(
+                            <div 
+                              key={subtitle.id}
+                              className="bg-gray-700/50 rounded-lg p-6 space-y-3"
+                            >
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => onTimeClick(subtitle.timestamp)}
+                                  className="text-sm text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                >
+                                  {subtitle.time}
+                                </button>
+                                <span className="text-gray-500">-</span>
+                                <button
+                                  onClick={() => onTimeClick(endSubtitle.timestamp)}
+                                  className="text-sm text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                >
+                                  {endSubtitle.time}
+                                </button>
+                              </div>
+                              <p className="text-gray-300 text-base leading-relaxed whitespace-pre-line">{sectionContent}</p>
                             </div>
-                            <p className="text-gray-300 text-sm">{sectionContent}</p>
-                          </div>
-                        );
-                      }
-                      return acc;
-                    }, [])}
+                          );
+                        }
+                        return acc;
+                      }, [])}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </ScrollArea>
 
