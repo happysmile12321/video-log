@@ -28,10 +28,7 @@ export function VideoList({
   const router = useRouter();
 
   const handleVideoClick = async (videoId: string) => {
-    const videoDetail = await getVideoDetail(videoId);
-    if (videoDetail) {
-      router.push(`/knowledge/${videoId}`);
-    }
+    router.push(`/knowledge/${videoId}`);
   };
 
   return (

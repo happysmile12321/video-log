@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { getVideoDetail } from '@/services/api';
 import type { VideoDetail } from '@/services/api';
@@ -13,13 +13,83 @@ import { Resizer } from '@/components/ui/Resizer';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
+// 骨架屏组件
+function VideoDetailSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-900 flex flex-col md:h-screen md:overflow-hidden">
+      <main className="flex-1 px-4 pb-4 md:min-h-0">
+        <div className="h-full max-w-[1920px] mx-auto flex flex-col md:flex-row gap-4">
+          {/* 左侧章节列表骨架屏 */}
+          <aside className="w-64 flex-shrink-0 bg-gray-800 rounded-lg overflow-hidden animate-pulse">
+            <div className="h-full flex flex-col">
+              <div className="flex-none p-4 border-b border-gray-700">
+                <div className="h-6 bg-gray-700 rounded w-3/4 mb-2"></div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-700 rounded w-2/3"></div>
+                </div>
+              </div>
+              <div className="flex-none p-4 border-b border-gray-700">
+                <div className="h-6 bg-gray-700 rounded w-1/3"></div>
+              </div>
+              <div className="flex-1 min-h-0 px-4 pb-4">
+                <div className="space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center space-x-2">
+                      <div className="h-4 bg-gray-700 rounded w-12"></div>
+                      <div className="h-4 bg-gray-700 rounded flex-1"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* 中间区域骨架屏 */}
+          <div className="flex-1 min-w-0 flex flex-col gap-4">
+            <div className="flex-none bg-black rounded-lg overflow-hidden p-4">
+              <div className="aspect-video bg-gray-800 rounded-lg animate-pulse"></div>
+            </div>
+            <div className="flex-1 min-h-0 bg-gray-800 rounded-lg overflow-hidden animate-pulse">
+              <div className="h-full p-4">
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-4 bg-gray-700 rounded w-full"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 右侧内容区域骨架屏 */}
+          <div className="h-full bg-gray-800 rounded-lg overflow-hidden animate-pulse">
+            <div className="p-4">
+              <div className="space-y-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-5 bg-gray-700 rounded w-1/4"></div>
+                    <div className="h-4 bg-gray-700 rounded w-full"></div>
+                    <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export default function VideoDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const [videoDetail, setVideoDetail] = useState<VideoDetail | null>(null);
   const [isMobileView, setIsMobileView] = useState(false);
   const [showChapters, setShowChapters] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const videoPlayerRef = useRef<{ handleChapterClick: (time: string) => void }>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkMobileView = () => {
@@ -38,20 +108,32 @@ export default function VideoDetailPage() {
   useEffect(() => {
     const fetchVideoDetail = async () => {
       if (params.id) {
-        const detail = await getVideoDetail(params.id as string);
-        setVideoDetail(detail);
+        try {
+          setIsLoading(true);
+          const detail = await getVideoDetail(params.id as string);
+          setVideoDetail(detail);
+        } catch (error) {
+          console.error('Failed to fetch video detail:', error);
+          router.push('/knowledge'); // 如果加载失败，返回列表页
+        } finally {
+          setIsLoading(false);
+        }
       }
     };
     fetchVideoDetail();
-  }, [params.id]);
+  }, [params.id, router]);
+
+  if (isLoading) {
+    return <VideoDetailSkeleton />;
+  }
 
   if (!videoDetail) {
     return <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-gray-400">加载中...</div>
+      <div className="text-gray-400">视频不存在或已被删除</div>
     </div>;
   }
 
-    const handleChapterClick = (time: string) => {
+  const handleChapterClick = (time: string) => {
     if (videoPlayerRef.current) {
       videoPlayerRef.current.handleChapterClick(time);
     }

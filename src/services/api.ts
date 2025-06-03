@@ -5,7 +5,7 @@ const API_BASE = 'https://open.feishu.cn/anycross/trigger/callback';
 export const API_ENDPOINTS = {
   KNOWLEDGE_TYPES: 'MDUwYTI4NGM4MWFlMjcwZDE1NzMyYTY4Yzc2NWZiZTZm',
   VIDEO_LIST: 'MGNhYjhhMDJhNzI3ZGMzNGVmNGU3ZjIyOWU1MjJjZWE0',
-  VIDEO_DETAIL: 'video-detail',
+  VIDEO_DETAIL: 'MDU3NDFmNmE0ZmIxMTRkZmZkOTBiYmI0NmU2YzgwMjg4',
 } as const;
 
 // 错误类型定义
@@ -213,78 +213,173 @@ export async function getVideoList(params: {
 
 // 获取视频详情
 export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
-  // 使用 mock 数据
-  const mockVideoDetail: VideoDetail = {
-    id: '1',
-    title: '上班宫斗？独立开发？程序员的出路在哪？【阿Test正经比较】',
-    thumbnail: '/images/video1.jpg',
-    duration: '07:53',
-    publishedAt: '4 个月前',
-    updatedAt: '4 个月前',
-    tags: ['程序员', '职业发展', '内卷', '独立开发', '副业'],
-    summary: '这段视频主要探讨了程序员的职业发展路径，尤其是在"内卷"大环境下的选择。视频通过采访多位程序员，分享了他们从上班转为独立开发的经历。',
-    videoUrl: '/videos/sample.mp4',
-    chapters: [
-      {
-        id: '1',
-        time: '00:00',
-        title: '程序员职业现状',
-        content: '探讨当前程序员的就业形势和发展机遇。'
-      },
-      {
-        id: '2',
-        time: '00:41',
-        title: '独立开发之路',
-        content: '分析独立开发的机遇与挑战。'
-      },
-      {
-        id: '3',
-        time: '01:19',
-        title: '新技术机遇',
-        content: '探讨鸿蒙等新技术带来的发展机会。'
-      }
-    ],
-    subtitles: [
-      {
-        id: '1',
-        timestamp: 0,
-        time: '00:00',
-        speaker: '张老师',
-        content: '大家好，今天我们来聊聊程序员的职业发展问题。'
-      },
-      {
-        id: '2',
-        timestamp: 15,
-        time: '00:15',
-        speaker: '学生A',
-        content: '老师，我听说现在程序员就业压力很大，是真的吗？'
-      },
-      {
-        id: '3',
-        timestamp: 30,
-        time: '00:30',
-        speaker: '张老师',
-        content: '确实，但压力同时也意味着机遇。让我们先看看当前的就业形势。'
-      }
-    ],
-    highlights: [
-      {
-        title: '程序员职业发展现状',
-        content: '🔍 深度解析程序员职业发展困境与机遇！在当前就业环境下，程序员面临着前所未有的压力和挑战。但危机中往往蕴含着转机，通过合理规划和把握机会，依然可以实现职业突破。',
-        tags: ['职业发展', '就业形势', '机遇']
-      },
-      {
-        title: '独立开发的机遇与挑战',
-        content: '💡 想转型独立开发？这些你必须知道！独立开发需要全面考虑技术储备、市场需求和资金规划。虽然风险存在，但通过合理规划和准备，独立开发也能成为一条可行的职业道路。',
-        tags: ['独立开发', '创业', '风险控制']
-      }
-    ],
-    thoughts: [
-      '💭 在就业压力下，如何找准自己的发展方向？',
-      '🤔 独立开发vs就业，如何权衡利弊做出选择？',
-      '📱 新技术浪潮下，程序员应该如何提前布局？'
-    ]
-  };
+  try {
+    const response = await fetchAPI<{
+      records: Array<{
+        record_id: string;
+        fields: {
+          总结摘要: Array<{
+            type: number;
+            value: Array<{
+              text: string;
+              type: string;
+            }>;
+          }>;
+          时间: number;
+          标签: string[];
+          标题: Array<{
+            text: string;
+            type: string;
+          }>;
+          章节列表提取: Array<{
+            text: string;
+            type: string;
+          }>;
+          视频时长: Array<{
+            text: string;
+            type: string;
+          }>;
+          字幕: Array<{
+            text: string;
+            type: string;
+          }>;
+        };
+      }>;
+    }>(API_ENDPOINTS.VIDEO_DETAIL, {
+      method: 'POST',
+      body: JSON.stringify({ recordId: id }),
+    });
 
-  return mockVideoDetail;
+    // 检查响应是否有效
+    if (!response || !response.records || !Array.isArray(response.records) || response.records.length === 0) {
+      console.error('Invalid API response:', response);
+      return null;
+    }
+
+    const record = response.records[0];
+    
+    if (!record || !record.fields) {
+      console.error('Invalid record data:', record);
+      return null;
+    }
+
+    const fields = record.fields;
+    
+    // 检查必要字段是否存在
+    if (!fields['标题']?.[0]?.text || !record.record_id) {
+      console.error('Missing required fields:', fields);
+      return null;
+    }
+
+    // Parse chapters from 章节列表提取
+    const chaptersText = fields['章节列表提取']?.[0]?.text || '';
+    const chapters = parseChapters(chaptersText);
+
+    // Parse subtitles
+    const subtitlesText = fields['字幕']?.[0]?.text || '';
+    const subtitles = parseSubtitles(subtitlesText);
+
+    // Create video detail object with safe fallbacks
+    const videoDetail: VideoDetail = {
+      id: record.record_id,
+      title: fields['标题'][0].text,
+      thumbnail: '/images/default-thumbnail.jpg', // Default thumbnail
+      duration: fields['视频时长']?.[0]?.text || '00:00',
+      publishedAt: fields['时间'] ? new Date(fields['时间']).toLocaleDateString() : '未知',
+      updatedAt: fields['时间'] ? new Date(fields['时间']).toLocaleDateString() : '未知',
+      tags: fields['标签'] || [],
+      summary: fields['总结摘要']?.[0]?.value?.[0]?.text || '',
+      videoUrl: '/videos/sample.mp4', // Default video URL
+      chapters,
+      subtitles,
+      highlights: [], // No highlights in the new API response
+      thoughts: [], // No thoughts in the new API response
+    };
+
+    return videoDetail;
+  } catch (error) {
+    console.error('Error fetching video detail:', error);
+    return null;
+  }
+}
+
+// Helper function to parse chapters from text
+function parseChapters(chaptersText: string) {
+  const lines = chaptersText.split('\n');
+  const chapters = [];
+  let currentChapter = null;
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
+
+    // Match chapter pattern like "1. Chapter Title (00:00:00~00:01:23)"
+    const chapterMatch = trimmedLine.match(/^(\d+)\.\s+(.+?)\s+\((\d{2}:\d{2}:\d{2})~(\d{2}:\d{2}:\d{2})\)/);
+    if (chapterMatch) {
+      if (currentChapter) {
+        chapters.push(currentChapter);
+      }
+      currentChapter = {
+        id: chapterMatch[1],
+        time: chapterMatch[3],
+        title: chapterMatch[2],
+        content: '',
+      };
+    } else if (currentChapter && trimmedLine.startsWith('   - ')) {
+      // Sub-chapter
+      currentChapter.content += trimmedLine.substring(5) + '\n';
+    }
+  }
+
+  if (currentChapter) {
+    chapters.push(currentChapter);
+  }
+
+  return chapters;
+}
+
+// Helper function to parse subtitles from text
+function parseSubtitles(subtitlesText: string) {
+  const lines = subtitlesText.split('\n');
+  const subtitles = [];
+  let currentSubtitle = null;
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
+
+    // Match subtitle pattern like "1 00:00:00,000 --> 00:00:11,680"
+    const timeMatch = trimmedLine.match(/^(\d+)\s+(\d{2}:\d{2}:\d{2},\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2},\d{3})/);
+    if (timeMatch) {
+      if (currentSubtitle) {
+        subtitles.push(currentSubtitle);
+      }
+      currentSubtitle = {
+        id: timeMatch[1],
+        timestamp: parseTimestamp(timeMatch[2]),
+        time: timeMatch[2].split(',')[0],
+        speaker: '',
+        content: '',
+      };
+    } else if (currentSubtitle) {
+      if (!currentSubtitle.content) {
+        currentSubtitle.content = trimmedLine;
+      } else {
+        currentSubtitle.content += '\n' + trimmedLine;
+      }
+    }
+  }
+
+  if (currentSubtitle) {
+    subtitles.push(currentSubtitle);
+  }
+
+  return subtitles;
+}
+
+// Helper function to parse timestamp to seconds
+function parseTimestamp(timestamp: string) {
+  const [time, milliseconds] = timestamp.split(',');
+  const [hours, minutes, seconds] = time.split(':').map(Number);
+  return hours * 3600 + minutes * 60 + seconds + Number(milliseconds) / 1000;
 } 
