@@ -12,6 +12,7 @@ import { VideoSubtitles } from '@/components/VideoSubtitles';
 import { MindMap } from '@/components/MindMap';
 import { Subtitle } from '@/services/api';
 import { Node, Edge } from 'reactflow';
+import { MermaidRenderer } from '@/components/MermaidRenderer';
 
 interface Chapter {
   id: string;
@@ -37,6 +38,8 @@ interface VideoContentProps {
   thoughts: string[];
   subtitles: Subtitle[];
   chapters: Chapter[];
+  chapterContent: string;
+  mindmapContent?: string;
   currentTime: number;
   onTimeClick: (timestamp: number) => void;
 }
@@ -52,6 +55,8 @@ export function VideoContent({
   thoughts, 
   subtitles,
   chapters,
+  chapterContent,
+  mindmapContent,
   currentTime,
   onTimeClick
 }: VideoContentProps) {
@@ -281,132 +286,7 @@ export function VideoContent({
           <div className="h-full bg-gray-800 rounded-lg">
             <ScrollArea className="h-full">
               <div className="p-4 sm:p-6 space-y-4">
-                {getMergedSubtitles().map((paragraph, index) => (
-                  <div 
-                    key={index}
-                    className="bg-gray-700/50 rounded-lg p-4 space-y-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => onTimeClick(paragraph.startTime)}
-                        className="text-sm text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                      >
-                        {paragraph.time}
-                      </button>
-                      {paragraph.speaker && (
-                        <span className="text-sm text-gray-400">
-                          {paragraph.speaker}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-gray-200 text-base leading-relaxed whitespace-pre-line">
-                      {paragraph.content.join(' ')}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-        )}
-
-        {activeTab === 'summary' && (
-          <div className="h-full bg-gray-800 rounded-lg">
-            <ScrollArea 
-              className="h-full" 
-              onScroll={handleScroll}
-              ref={summaryScrollRef}
-            >
-              <div className="p-4 sm:p-6 space-y-8">
-                {/* 摘要部分 */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <span>📝</span>
-                    <span>内容速览</span>
-                  </h2>
-                  <div className="bg-gray-700/50 rounded-lg p-6">
-                    <div className="prose prose-invert max-w-none">
-                      {highlights.length > 0 ? (
-                        <div className="space-y-4">
-                          <p className="text-gray-200 text-base leading-relaxed whitespace-pre-line">
-                            {highlights[0].content}
-                          </p>
-                          {highlights[0].tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 pt-2">
-                              {highlights[0].tags.map(tag => (
-                                <span 
-                                  key={tag}
-                                  className="text-xs px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full"
-                                >
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-gray-400 italic">暂无内容摘要</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 亮点部分 */}
-                {highlights.length > 1 && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                      <span>✨</span>
-                      <span>精彩亮点</span>
-                    </h2>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {highlights.slice(1).map((highlight, index) => (
-                        <div 
-                          key={index}
-                          className="bg-gray-700/50 rounded-lg p-6 space-y-3"
-                        >
-                          <h3 className="text-white font-medium text-lg">{highlight.title}</h3>
-                          <p className="text-gray-300 text-base leading-relaxed whitespace-pre-line">{highlight.content}</p>
-                          {highlight.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 pt-2">
-                              {highlight.tags.map(tag => (
-                                <span 
-                                  key={tag}
-                                  className="text-xs px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full"
-                                >
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 思考启发 */}
-                {thoughts.length > 0 && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                      <span>💡</span>
-                      <span>思考启发</span>
-                    </h2>
-                    <div className="bg-gray-700/50 rounded-lg p-6">
-                      <ul className="space-y-4">
-                        {thoughts.map((thought, index) => (
-                          <li 
-                            key={index}
-                            className="flex items-start text-gray-200"
-                          >
-                            <span className="mr-3 text-blue-400 text-lg">•</span>
-                            <span className="text-base leading-relaxed whitespace-pre-line">{thought}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                )}
-
-                {/* 章节内容 */}
+                {/* 章节内容（从 summary tab 移动过来） */}
                 {chapters.length > 0 && (
                   <div className="space-y-4">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -490,8 +370,7 @@ export function VideoContent({
                     </div>
                   </div>
                 )}
-
-                {/* 章节总结 */}
+                {/* 字幕分段总结（原来在 summary） */}
                 {subtitles.length > 0 && (
                   <div className="space-y-4">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -537,6 +416,146 @@ export function VideoContent({
                     </div>
                   </div>
                 )}
+                {/* 字幕原文段落 */}
+                {getMergedSubtitles().map((paragraph, index) => (
+                  <div 
+                    key={index}
+                    className="bg-gray-700/50 rounded-lg p-4 space-y-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => onTimeClick(paragraph.startTime)}
+                        className="text-sm text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                      >
+                        {paragraph.time}
+                      </button>
+                      {paragraph.speaker && (
+                        <span className="text-sm text-gray-400">
+                          {paragraph.speaker}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-200 text-base leading-relaxed whitespace-pre-line">
+                      {paragraph.content.join(' ')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
+
+        {activeTab === 'summary' && (
+          <div className="h-full bg-gray-800 rounded-lg">
+            <ScrollArea 
+              className="h-full" 
+              onScroll={handleScroll}
+              ref={summaryScrollRef}
+            >
+              <div className="p-4 sm:p-6 space-y-8">
+                {/* 摘要部分 */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <span>📝</span>
+                    <span>内容速览</span>
+                  </h2>
+                  <div className="bg-gray-700/50 rounded-lg p-6">
+                    <div className="prose prose-invert max-w-none">
+                      {highlights.length > 0 ? (
+                        <div className="space-y-4">
+                          <p className="text-gray-200 text-base leading-relaxed whitespace-pre-line">
+                            {highlights[0].content}
+                          </p>
+                          {highlights[0].tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-2">
+                              {highlights[0].tags.map(tag => (
+                                <span 
+                                  key={tag}
+                                  className="text-xs px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-gray-400 italic">暂无内容摘要</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 章节内容（章节内容原文，格式化显示） */}
+                {chapterContent && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <span>📑</span>
+                      <span>章节内容</span>
+                    </h2>
+                    <div className="bg-gray-700/50 rounded-lg p-6">
+                      <div className="text-gray-200 text-base leading-relaxed whitespace-pre-line">
+                        {chapterContent}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 亮点部分 */}
+                {highlights.length > 1 && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <span>✨</span>
+                      <span>精彩亮点</span>
+                    </h2>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {highlights.slice(1).map((highlight, index) => (
+                        <div 
+                          key={index}
+                          className="bg-gray-700/50 rounded-lg p-6 space-y-3"
+                        >
+                          <h3 className="text-white font-medium text-lg">{highlight.title}</h3>
+                          <p className="text-gray-300 text-base leading-relaxed whitespace-pre-line">{highlight.content}</p>
+                          {highlight.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-2">
+                              {highlight.tags.map(tag => (
+                                <span 
+                                  key={tag}
+                                  className="text-xs px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 思考启发 */}
+                {thoughts.length > 0 && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <span>💡</span>
+                      <span>思考启发</span>
+                    </h2>
+                    <div className="bg-gray-700/50 rounded-lg p-6">
+                      <ul className="space-y-4">
+                        {thoughts.map((thought, index) => (
+                          <li 
+                            key={index}
+                            className="flex items-start text-gray-200"
+                          >
+                            <span className="mr-3 text-blue-400 text-lg">•</span>
+                            <span className="text-base leading-relaxed whitespace-pre-line">{thought}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </div>
             </ScrollArea>
 
@@ -554,7 +573,17 @@ export function VideoContent({
 
         {activeTab === 'mindmap' && (
           <div className="h-full bg-gray-800 rounded-lg overflow-hidden">
-            <MindMap data={mindmapData} />
+            {mindmapContent ? (
+              mindmapContent.trim().startsWith('```mermaid') ? (
+                <MermaidRenderer code={mindmapContent} className="p-4" />
+              ) : (
+                <div className="p-6 text-gray-200 whitespace-pre-line">
+                  {mindmapContent}
+                </div>
+              )
+            ) : (
+              <MindMap data={mindmapData} />
+            )}
           </div>
         )}
 

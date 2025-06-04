@@ -12,6 +12,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Resizer } from '@/components/ui/Resizer';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import React from 'react';
 
 // 骨架屏组件
 function VideoDetailSkeleton() {
@@ -192,17 +193,37 @@ export default function VideoDetailPage() {
                   <ScrollArea className="h-full">
                     <div className="space-y-3">
                       {videoDetail.chapters.map((chapter) => (
-                        <Tooltip key={chapter.id} content={chapter.title}>
-                          <div
-                            className="w-full text-left px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors duration-200"
-                            onClick={() => handleChapterClick(chapter.time)}
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs text-gray-500 font-mono tabular-nums">{chapter.time}</span>
-                              <span className="flex-1 truncate">{chapter.title}</span>
+                        <React.Fragment key={chapter.id}>
+                          <Tooltip content={chapter.title}>
+                            <div
+                              className="w-full text-left px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors duration-200"
+                              onClick={() => handleChapterClick(chapter.time)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-gray-500 font-mono tabular-nums">{chapter.time}</span>
+                                <span className="flex-1 truncate">{chapter.title}</span>
+                              </div>
                             </div>
-                          </div>
-                        </Tooltip>
+                          </Tooltip>
+                          {/* 子章节显示 */}
+                          {chapter.subChapters && chapter.subChapters.length > 0 && (
+                            <div className="pl-6 space-y-2">
+                              {chapter.subChapters.map((sub) => (
+                                <Tooltip key={sub.id} content={sub.title}>
+                                  <div
+                                    className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors duration-200"
+                                    onClick={() => handleChapterClick(sub.time)}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-gray-500 font-mono tabular-nums">{sub.time}</span>
+                                      <span className="flex-1 truncate">{sub.title}</span>
+                                    </div>
+                                  </div>
+                                </Tooltip>
+                              ))}
+                            </div>
+                          )}
+                        </React.Fragment>
                       ))}
                     </div>
                   </ScrollArea>
@@ -251,6 +272,8 @@ export default function VideoDetailPage() {
                 thoughts={videoDetail.thoughts}
                 subtitles={videoDetail.subtitles}
                 chapters={videoDetail.chapters}
+                chapterContent={videoDetail.chapterContent}
+                mindmapContent={videoDetail.mindmapContent}
                 currentTime={currentTime}
                 onTimeClick={handleTimeClick}
               />
