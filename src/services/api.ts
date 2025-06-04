@@ -266,6 +266,9 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
           text: string;
           type: string;
         }>;
+        视频地址: Array<{
+          link: string;
+        }>;
       };
     }>>(API_ENDPOINTS.VIDEO_DETAIL, {
       method: 'POST',
@@ -325,6 +328,9 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
       day: 'numeric'
     }) : '未知';
 
+    // 获取视频地址
+    const videoUrl = fields['视频地址']?.[0]?.link || '/videos/sample.mp4';
+
     // Create video detail object with safe fallbacks
     const videoDetail: VideoDetail = {
       id: record.record_id,
@@ -335,7 +341,7 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
       updatedAt: formattedDate,
       tags: fields['标签'] || [],
       summary: fields['内容速览']?.[0]?.text || '',
-      videoUrl: '/videos/sample.mp4',
+      videoUrl,
       chapters,
       subtitles,
       highlights: [

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
 import Artplayer from 'artplayer';
 import '@/styles/artplayer.css';
+import flvjs from 'flv.js';
 
 interface Chapter {
   id: string;
@@ -120,9 +121,25 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         setIsLoading(false);
       }
 
+      let flvPlayer;
+      if (videoUrl && videoUrl.endsWith('.flv') && flvjs.isSupported()) {
+        const video = document.querySelector('video');
+        if (video) {
+          flvPlayer = flvjs.createPlayer({
+            type: 'flv',
+            url: videoUrl,
+          });
+          flvPlayer.attachMediaElement(video);
+          flvPlayer.load();
+        }
+      }
+
       return () => {
         if (playerRef.current) {
           playerRef.current.destroy();
+        }
+        if (flvPlayer) {
+          flvPlayer.destroy();
         }
       };
     }, [videoUrl, onTimeUpdate, formattedVideoUrl]);
