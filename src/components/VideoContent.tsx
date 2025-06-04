@@ -495,7 +495,59 @@ export function VideoContent({
                     </h2>
                     <div className="bg-gray-700/50 rounded-lg p-6">
                       <div className="text-gray-200 text-base leading-relaxed whitespace-pre-line">
-                        {chapterContent}
+                        {chapterContent.split(/\n/).map((line, idx) => {
+                          // 匹配 ⏰00:00-01:00 或 ⏰00:00
+                          const timeRegex = /⏰(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?/g;
+                          let lastIndex = 0;
+                          const parts: React.ReactNode[] = [];
+                          let match;
+                          while ((match = timeRegex.exec(line)) !== null) {
+                            // 添加前面的文本
+                            if (match.index > lastIndex) {
+                              parts.push(line.slice(lastIndex, match.index));
+                            }
+                            // 起始时间
+                            const start = match[1];
+                            // 结束时间
+                            const end = match[2];
+                            // 转换为秒
+                            const toSeconds = (t: string) => {
+                              const [m, s] = t.split(':').map(Number);
+                              return m * 60 + s;
+                            };
+                            // 渲染起始时间按钮
+                            parts.push(
+                              <button
+                                key={`start-${idx}-${match.index}`}
+                                onClick={() => onTimeClick(toSeconds(start))}
+                                className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer mx-1"
+                              >
+                                ⏰{start}
+                              </button>
+                            );
+                            // 如果有结束时间，渲染结束时间按钮
+                            if (end) {
+                              parts.push(
+                                <>
+                                  <span>-</span>
+                                  <button
+                                    key={`end-${idx}-${match.index}`}
+                                    onClick={() => onTimeClick(toSeconds(end))}
+                                    className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer mx-1"
+                                  >
+                                    {end}
+                                  </button>
+                                </>
+                              );
+                            }
+                            lastIndex = match.index + match[0].length;
+                          }
+                          // 添加剩余文本
+                          if (lastIndex < line.length) {
+                            parts.push(line.slice(lastIndex));
+                          }
+                          return <div key={idx}>{parts}</div>;
+                        })}
                       </div>
                     </div>
                   </div>
