@@ -13,6 +13,21 @@ import { MindMap } from '@/components/MindMap';
 import { Subtitle } from '@/services/api';
 import { Node, Edge } from 'reactflow';
 
+interface Chapter {
+  id: string;
+  time: string;
+  endTime?: string;
+  title: string;
+  content: string;
+  subChapters?: Array<{
+    id: string;
+    time: string;
+    endTime?: string;
+    title: string;
+    content: string;
+  }>;
+}
+
 interface VideoContentProps {
   highlights: Array<{
     title: string;
@@ -21,14 +36,22 @@ interface VideoContentProps {
   }>;
   thoughts: string[];
   subtitles: Subtitle[];
+  chapters: Chapter[];
   currentTime: number;
   onTimeClick: (timestamp: number) => void;
+}
+
+// Helper function to parse timestamp to seconds
+function parseTimestamp(timestamp: string): number {
+  const [hours, minutes, seconds] = timestamp.split(':').map(Number);
+  return hours * 3600 + minutes * 60 + seconds;
 }
 
 export function VideoContent({ 
   highlights, 
   thoughts, 
   subtitles,
+  chapters,
   currentTime,
   onTimeClick
 }: VideoContentProps) {
@@ -383,12 +406,97 @@ export function VideoContent({
                   </div>
                 )}
 
+                {/* 章节内容 */}
+                {chapters.length > 0 && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <span>📑</span>
+                      <span>章节内容</span>
+                    </h2>
+                    <div className="space-y-4">
+                      {chapters.map((chapter) => (
+                        <div 
+                          key={chapter.id}
+                          className="bg-gray-700/50 rounded-lg p-6 space-y-3"
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className="flex items-center gap-1 text-sm text-gray-400">
+                              <button
+                                onClick={() => onTimeClick(parseTimestamp(chapter.time))}
+                                className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                              >
+                                {chapter.time}
+                              </button>
+                              {chapter.endTime && (
+                                <>
+                                  <span>-</span>
+                                  <button
+                                    onClick={() => onTimeClick(parseTimestamp(chapter.endTime as string))}
+                                    className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                  >
+                                    {chapter.endTime}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                            <h3 className="text-white font-medium text-lg">{chapter.title}</h3>
+                          </div>
+                          
+                          {/* 子章节列表 */}
+                          {chapter.subChapters && chapter.subChapters.length > 0 && (
+                            <div className="pl-4 space-y-3">
+                              {chapter.subChapters.map((subChapter) => (
+                                <div key={subChapter.id} className="space-y-2">
+                                  <div className="flex items-start gap-2">
+                                    <div className="flex items-center gap-1 text-sm text-gray-400">
+                                      <button
+                                        onClick={() => onTimeClick(parseTimestamp(subChapter.time))}
+                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                      >
+                                        {subChapter.time}
+                                      </button>
+                                      {subChapter.endTime && (
+                                        <>
+                                          <span>-</span>
+                                          <button
+                                            onClick={() => onTimeClick(parseTimestamp(subChapter.endTime as string))}
+                                            className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                          >
+                                            {subChapter.endTime}
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                    <h4 className="text-white font-medium">{subChapter.title}</h4>
+                                  </div>
+                                  {subChapter.content && (
+                                    <div className="text-gray-300 text-base leading-relaxed whitespace-pre-line pl-4">
+                                      {subChapter.content}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* 主章节内容 */}
+                          {chapter.content && (
+                            <div className="text-gray-300 text-base leading-relaxed whitespace-pre-line pl-4">
+                              {chapter.content}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* 章节总结 */}
                 {subtitles.length > 0 && (
                   <div className="space-y-4">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
                       <span>📚</span>
-                      <span>章节内容</span>
+                      <span>章节总结</span>
                     </h2>
                     <div className="space-y-4">
                       {subtitles.reduce((acc: Array<React.ReactElement>, subtitle, index, array) => {

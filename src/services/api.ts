@@ -71,8 +71,16 @@ export interface VideoDetail extends Video {
   chapters: {
     id: string;
     time: string;
+    endTime?: string;
     title: string;
     content: string;
+    subChapters?: {
+      id: string;
+      time: string;
+      endTime: string;
+      title: string;
+      content: string;
+    }[];
   }[];
   subtitles: Subtitle[];
   highlights: {
@@ -218,13 +226,10 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
       record_id: string;
       fields: {
         ID: string;
-        总结摘要: {
-          type: number;
-          value: Array<{
-            text: string;
-            type: string;
-          }>;
-        };
+        内容速览: Array<{
+          text: string;
+          type: string;
+        }>;
         时间: number;
         标签: string[];
         标题: Array<{
@@ -235,11 +240,23 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
           text: string;
           type: string;
         }>;
-        视频时长: Array<{
+        章节内容: Array<{
+          text: string;
+          type: string;
+        }>;
+        思考启发: Array<{
+          text: string;
+          type: string;
+        }>;
+        精彩亮点: Array<{
           text: string;
           type: string;
         }>;
         字幕: Array<{
+          text: string;
+          type: string;
+        }>;
+        视频时长: Array<{
           text: string;
           type: string;
         }>;
@@ -274,8 +291,38 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
 
     // Parse chapters from 章节列表提取
     const chaptersText = fields['章节列表提取']?.[0]?.text || '';
+    console.log('原始章节列表文本:', chaptersText);
     const chapters = parseChapters(chaptersText);
-    console.log('解析后的章节数据:', JSON.stringify(chapters, null, 2));
+    console.log('解析后的章节列表数据:', JSON.stringify(chapters, null, 2));
+
+    // Parse chapter content from 章节内容
+    const chapterContentText = fields['章节内容']?.[0]?.text || '';
+    console.log('原始章节内容文本:', chapterContentText);
+    const chapterContent = parseChapterContent(chapterContentText);
+    console.log('解析后的章节内容数据:', JSON.stringify(chapterContent, null, 2));
+
+    // 保持章节列表不变，只添加内容
+    const enrichedChapters = chapters.map(chapter => {
+      // 尝试找到匹配的章节内容
+      const content = chapterContent.find(c => {
+        // 检查时间是否匹配
+        const chapterTime = chapter.time.split(':').map(Number);
+        const contentTime = c.time.split(':').map(Number);
+        return chapterTime[0] === contentTime[0] && 
+               chapterTime[1] === contentTime[1] && 
+               chapterTime[2] === contentTime[2];
+      });
+
+      if (content) {
+        return {
+          ...chapter,
+          content: content.content // 只添加内容，保持原有的标题和时间
+        };
+      }
+      return chapter;
+    });
+
+    console.log('最终处理后的章节数据:', JSON.stringify(enrichedChapters, null, 2));
 
     // Parse subtitles
     const subtitlesText = fields['字幕']?.[0]?.text || '';
@@ -300,23 +347,23 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
       publishedAt: formattedDate,
       updatedAt: formattedDate,
       tags: fields['标签'] || [],
-      summary: fields['总结摘要']?.value?.[0]?.text || '',
+      summary: fields['内容速览']?.[0]?.text || '',
       videoUrl: '/videos/sample.mp4',
-      chapters,
+      chapters: enrichedChapters,
       subtitles,
       highlights: [
         {
-          title: '内容概述',
-          content: fields['总结摘要']?.value?.[0]?.text || '暂无内容概述',
+          title: '内容速览',
+          content: fields['内容速览']?.[0]?.text || '暂无内容概述',
           tags: fields['标签'] || []
         },
-        ...(fields['总结摘要']?.value?.slice(1) || []).map((item, index) => ({
-          title: `要点 ${index + 1}`,
+        ...(fields['精彩亮点'] || []).map((item, index) => ({
+          title: `亮点 ${index + 1}`,
           content: item.text,
           tags: []
         }))
       ],
-      thoughts: fields['总结摘要']?.value?.slice(1)?.map(item => item.text) || [],
+      thoughts: (fields['思考启发'] || []).map(item => item.text),
     };
 
     console.log('最终处理后的视频详情数据:', JSON.stringify(videoDetail, null, 2));
@@ -330,58 +377,63 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
 
 // Helper function to parse chapters from text
 function parseChapters(chaptersText: string) {
-  console.log('原始章节文本:', chaptersText);
+  console.log('开始解析章节列表文本:', chaptersText);
   
   const lines = chaptersText.split('\n');
   const chapters = [];
-  let currentChapter = null;
   let chapterCounter = 1;
+  let currentChapter = null;
+  let currentSubChapter = null;
 
   for (const line of lines) {
     const trimmedLine = line.trim();
     if (!trimmedLine) continue;
 
-    // 匹配多种章节格式
-    // 1. "1. Chapter Title (00:00:00~00:01:23)"
-    // 2. "00:00:00 Chapter Title"
-    // 3. "Chapter Title - 00:00:00"
-    // 4. "1. Chapter Title - 00:00:00"
-    const chapterMatch = trimmedLine.match(
-      /^(?:(\d+)\.\s*)?(.+?)(?:\s*[-~]\s*|\s*\()(\d{2}:\d{2}:\d{2})(?:\)|$)/i
-    );
+    // 匹配主章节格式：数字. 标题 (时间范围)
+    const mainChapterMatch = trimmedLine.match(/^(\d+)\.\s+(.+?)\s*\((\d{2}:\d{2}:\d{2})~(\d{2}:\d{2}:\d{2})\)$/);
+    
+    // 匹配子章节格式：- 标题 (时间范围)
+    const subChapterMatch = trimmedLine.match(/^\s*-\s+(.+?)\s*\((\d{2}:\d{2}:\d{2})~(\d{2}:\d{2}:\d{2})\)$/);
 
-    if (chapterMatch) {
+    if (mainChapterMatch) {
+      // 如果有当前章节，先保存它
       if (currentChapter) {
         chapters.push(currentChapter);
       }
 
-      // 确保时间格式统一为 HH:MM:SS
-      const timeParts = chapterMatch[3].split(':').map(Number);
-      let formattedTime = chapterMatch[3];
-      
-      // 如果是 MM:SS 格式，转换为 HH:MM:SS
-      if (timeParts.length === 2) {
-        formattedTime = `00:${chapterMatch[3]}`;
-      }
-
+      // 创建新章节
       currentChapter = {
         id: `chapter-${chapterCounter++}`,
-        time: formattedTime,
-        title: chapterMatch[2].trim(),
+        time: mainChapterMatch[3],
+        endTime: mainChapterMatch[4],
+        title: mainChapterMatch[2].trim(),
         content: '',
+        subChapters: []
       };
-      console.log('解析到新章节:', currentChapter);
-    } else if (currentChapter && trimmedLine.startsWith('   - ')) {
-      // 子章节内容
-      currentChapter.content += trimmedLine.substring(5) + '\n';
-      console.log('添加子章节内容:', trimmedLine.substring(5));
-    } else if (currentChapter) {
-      // 其他内容作为当前章节的补充
-      currentChapter.content += trimmedLine + '\n';
-      console.log('添加章节补充内容:', trimmedLine);
+      currentSubChapter = null;
+      console.log('解析到新主章节:', currentChapter);
+    } else if (subChapterMatch && currentChapter) {
+      // 创建子章节
+      currentSubChapter = {
+        id: `subchapter-${chapterCounter++}`,
+        time: subChapterMatch[2],
+        endTime: subChapterMatch[3],
+        title: subChapterMatch[1].trim(),
+        content: ''
+      };
+      currentChapter.subChapters.push(currentSubChapter);
+      console.log('解析到新子章节:', currentSubChapter);
+    } else if (currentChapter && !trimmedLine.startsWith('-')) {
+      // 处理章节内容
+      if (currentSubChapter) {
+        currentSubChapter.content += (currentSubChapter.content ? '\n' : '') + trimmedLine;
+      } else {
+        currentChapter.content += (currentChapter.content ? '\n' : '') + trimmedLine;
+      }
     }
   }
 
+  // 添加最后一个章节
   if (currentChapter) {
     chapters.push(currentChapter);
   }
@@ -434,4 +486,43 @@ function parseTimestamp(timestamp: string) {
   const [time, milliseconds] = timestamp.split(',');
   const [hours, minutes, seconds] = time.split(':').map(Number);
   return hours * 3600 + minutes * 60 + seconds + Number(milliseconds) / 1000;
+}
+
+// Helper function to parse chapter content
+function parseChapterContent(contentText: string) {
+  console.log('开始解析章节内容文本:', contentText);
+  
+  const lines = contentText.split('\n');
+  const chapters = [];
+  let currentChapter = null;
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
+
+    // Match time pattern like "⏰00:00-01:00"
+    const timeMatch = trimmedLine.match(/⏰(\d{2}:\d{2})-(\d{2}:\d{2})/);
+    if (timeMatch) {
+      if (currentChapter) {
+        chapters.push(currentChapter);
+      }
+      currentChapter = {
+        time: timeMatch[1],
+        endTime: timeMatch[2],
+        content: ''
+      };
+      console.log('解析到新章节内容:', currentChapter);
+    } else if (currentChapter) {
+      // 添加内容到当前章节
+      currentChapter.content += (currentChapter.content ? '\n' : '') + trimmedLine;
+      console.log('添加章节内容:', trimmedLine);
+    }
+  }
+
+  if (currentChapter) {
+    chapters.push(currentChapter);
+  }
+
+  console.log('最终解析的章节内容:', chapters);
+  return chapters;
 } 

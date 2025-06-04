@@ -250,6 +250,7 @@ export default function VideoDetailPage() {
                 highlights={videoDetail.highlights}
                 thoughts={videoDetail.thoughts}
                 subtitles={videoDetail.subtitles}
+                chapters={videoDetail.chapters}
                 currentTime={currentTime}
                 onTimeClick={handleTimeClick}
               />
