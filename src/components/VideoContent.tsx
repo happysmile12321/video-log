@@ -91,80 +91,12 @@ export function VideoContent({
   const [activeTab, setActiveTab] = useState('article');
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
-  const [collapsedStates, setCollapsedStates] = useState<Record<string, boolean>>({});
+  const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set());
   const summaryScrollRef = useRef<HTMLDivElement>(null);
   const articleScrollRef = useRef<HTMLDivElement>(null);
   const activeSubtitleRef = useRef<HTMLDivElement>(null);
   const chapterListRef = useRef<HTMLDivElement>(null);
   const activeChapterRef = useRef<HTMLDivElement>(null);
-
-  // 查找当前激活的章节
-  const findActiveChapter = (chapters: Chapter[], currentTime: number): { chapter: Chapter; subChapter?: Chapter; subSubChapter?: Chapter } | null => {
-    for (const chapter of chapters) {
-      const chapterStart = chapter.timeStart ? parseTimestamp(chapter.timeStart) : chapter.timestamp;
-      const chapterEnd = chapter.timeEnd ? parseTimestamp(chapter.timeEnd) : chapter.timestamp;
-      
-      if (currentTime >= chapterStart && currentTime <= chapterEnd) {
-        // 检查子章节
-        if (chapter.children && chapter.children.length > 0) {
-          for (const subChapter of chapter.children) {
-            const subChapterStart = subChapter.timeStart ? parseTimestamp(subChapter.timeStart) : subChapter.timestamp;
-            const subChapterEnd = subChapter.timeEnd ? parseTimestamp(subChapter.timeEnd) : subChapter.timestamp;
-            
-            if (currentTime >= subChapterStart && currentTime <= subChapterEnd) {
-              // 检查三级章节
-              if (subChapter.children && subChapter.children.length > 0) {
-                for (const subSubChapter of subChapter.children) {
-                  const subSubChapterStart = subSubChapter.timeStart ? parseTimestamp(subSubChapter.timeStart) : subSubChapter.timestamp;
-                  const subSubChapterEnd = subSubChapter.timeEnd ? parseTimestamp(subSubChapter.timeEnd) : subSubChapter.timestamp;
-                  
-                  if (currentTime >= subSubChapterStart && currentTime <= subSubChapterEnd) {
-                    return { chapter, subChapter, subSubChapter };
-                  }
-                }
-              }
-              return { chapter, subChapter };
-            }
-          }
-        }
-        return { chapter };
-      }
-    }
-    return null;
-  };
-
-  // 监听 currentTime 变化，处理滚动和高亮
-  useEffect(() => {
-    // 处理文章视图的滚动
-    if (activeTab === 'article' && activeSubtitleRef.current) {
-      const target = activeSubtitleRef.current;
-      const targetId = target.id;
-      
-      if (targetId) {
-        scroller.scrollTo(targetId, {
-          duration: 800,
-          smooth: true,
-          offset: -100, // 向上偏移，使目标元素位于视图中间偏上位置
-          containerId: 'article-scroll-area'
-        });
-      }
-    }
-
-    // 处理章节列表的滚动
-    if (activeTab === 'article' && activeChapterRef.current) {
-      const target = activeChapterRef.current;
-      const targetId = target.id;
-      
-      if (targetId) {
-        scroller.scrollTo(targetId, {
-          duration: 800,
-          smooth: true,
-          offset: -100, // 向上偏移，使目标元素位于视图中间偏上位置
-          containerId: 'chapter-scroll-area'
-        });
-      }
-    }
-  }, [currentTime, activeTab]);
 
   // 处理展开/收起状态
   const toggleExpand = (id: string) => {
@@ -174,19 +106,23 @@ export function VideoContent({
     }));
   };
 
-  // 处理组件折叠状态
   const toggleCollapse = (id: string) => {
-    setCollapsedStates(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
+    setCollapsedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
   // 获取展开状态
   const isExpanded = (id: string) => expandedStates[id] || false;
   
   // 获取折叠状态
-  const isCollapsed = (id: string) => collapsedStates[id] || false;
+  const isCollapsed = (id: string) => collapsedItems.has(id);
 
   console.log(subtitles);
 
@@ -249,9 +185,9 @@ export function VideoContent({
     return paragraphs;
   };
 
-  const handleScroll = (event: React.UIEvent<HTMLElement>) => {
-    const scrollTop = event.currentTarget.scrollTop;
-    setShowBackToTop(scrollTop > 200);
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop } = e.currentTarget;
+    setShowBackToTop(scrollTop > 100);
   };
 
   const scrollToTop = () => {
@@ -264,26 +200,9 @@ export function VideoContent({
   };
 
   const tabs = [
-    {
-      id: 'article',
-      label: '文章视图',
-      icon: <DocumentDuplicateIcon className="w-4 h-4" />,
-    },
-    {
-      id: 'subtitles',
-      label: '字幕列表',
-      icon: <ChatBubbleLeftRightIcon className="w-4 h-4" />,
-    },
-    {
-      id: 'summary',
-      label: '总结摘要',
-      icon: <DocumentTextIcon className="w-4 h-4" />,
-    },
-    {
-      id: 'mindmap',
-      label: '思维导图',
-      icon: <MapIcon className="w-4 h-4" />,
-    },
+    { id: 'article', label: '文章', icon: '📑' },
+    { id: 'summary', label: '总结摘要', icon: '📝' },
+    { id: 'mindmap', label: '思维导图', icon: '🧠' }
   ];
 
   // Generate mindmap data from highlights and thoughts
@@ -472,128 +391,58 @@ export function VideoContent({
     );
   };
 
-  // 在渲染章节字幕时使用
-  const renderChapterSubtitles = (chapterSubtitles: Subtitle[], chapterIndex: number) => {
-    const id = `chapter-subtitles-${chapterIndex}`;
-    const shouldShowCollapse = chapterSubtitles.length > 5;
-    const displaySubtitles = isCollapsed(id) ? chapterSubtitles.slice(0, 5) : chapterSubtitles;
-
-    return (
-      <div className="bg-gray-800/50 rounded-lg p-4">
-        <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-          <div className="flex items-center gap-2">
-            <span>💬</span>
-            <span>字幕内容</span>
-          </div>
-          {shouldShowCollapse && (
-            <button
-              onClick={() => toggleCollapse(id)}
-              className="text-blue-400 hover:text-blue-300 text-sm inline-flex items-center gap-1"
-            >
-              {isCollapsed(id) ? (
-                <>
-                  <ChevronDownIcon className="w-4 h-4" />
-                  <span>展开更多</span>
-                </>
-              ) : (
-                <>
-                  <ChevronUpIcon className="w-4 h-4" />
-                  <span>收起</span>
-                </>
-              )}
-            </button>
-          )}
-        </div>
-        <div className="bg-gray-900/30 rounded-lg p-3">
-          {displaySubtitles.map((subtitle, subIndex) => 
-            renderSubtitle(subtitle, `chapter-${chapterIndex}-${subIndex}`)
-          )}
-        </div>
-      </div>
-    );
+  // 查找当前激活的章节
+  const findActiveChapter = (chapters: Chapter[], currentTime: number): { chapter: Chapter; subChapter?: Chapter; subSubChapter?: Chapter } | null => {
+    for (const chapter of chapters) {
+      const chapterStart = chapter.timeStart ? parseTimestamp(chapter.timeStart) : chapter.timestamp;
+      const chapterEnd = chapter.timeEnd ? parseTimestamp(chapter.timeEnd) : chapter.timestamp;
+      
+      if (currentTime >= chapterStart && currentTime <= chapterEnd) {
+        // 检查子章节
+        if (chapter.children && chapter.children.length > 0) {
+          for (const subChapter of chapter.children) {
+            const subChapterStart = subChapter.timeStart ? parseTimestamp(subChapter.timeStart) : subChapter.timestamp;
+            const subChapterEnd = subChapter.timeEnd ? parseTimestamp(subChapter.timeEnd) : subChapter.timestamp;
+            
+            if (currentTime >= subChapterStart && currentTime <= subChapterEnd) {
+              // 检查三级章节
+              if (subChapter.children && subChapter.children.length > 0) {
+                for (const subSubChapter of subChapter.children) {
+                  const subSubChapterStart = subSubChapter.timeStart ? parseTimestamp(subSubChapter.timeStart) : subSubChapter.timestamp;
+                  const subSubChapterEnd = subSubChapter.timeEnd ? parseTimestamp(subSubChapter.timeEnd) : subSubChapter.timestamp;
+                  
+                  if (currentTime >= subSubChapterStart && currentTime <= subSubChapterEnd) {
+                    return { chapter, subChapter, subSubChapter };
+                  }
+                }
+              }
+              return { chapter, subChapter };
+            }
+          }
+        }
+        return { chapter };
+      }
+    }
+    return null;
   };
 
-  // 在渲染子章节字幕时使用
-  const renderSubChapterSubtitles = (subChapterSubtitles: Subtitle[], chapterIndex: number, subIndex: number) => {
-    const id = `subchapter-subtitles-${chapterIndex}-${subIndex}`;
-    const shouldShowCollapse = subChapterSubtitles.length > 5;
-    const displaySubtitles = isCollapsed(id) ? subChapterSubtitles.slice(0, 5) : subChapterSubtitles;
-
-    return (
-      <div className="bg-gray-800/50 rounded-lg p-3">
-        <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-          <div className="flex items-center gap-2">
-            <span>💬</span>
-            <span>字幕内容</span>
-          </div>
-          {shouldShowCollapse && (
-            <button
-              onClick={() => toggleCollapse(id)}
-              className="text-blue-400 hover:text-blue-300 text-sm inline-flex items-center gap-1"
-            >
-              {isCollapsed(id) ? (
-                <>
-                  <ChevronDownIcon className="w-4 h-4" />
-                  <span>展开更多</span>
-                </>
-              ) : (
-                <>
-                  <ChevronUpIcon className="w-4 h-4" />
-                  <span>收起</span>
-                </>
-              )}
-            </button>
-          )}
-        </div>
-        <div className="bg-gray-900/30 rounded-lg p-3">
-          {displaySubtitles.map((subtitle, subSubIndex) => 
-            renderSubtitle(subtitle, `subchapter-${chapterIndex}-${subIndex}-${subSubIndex}`)
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // 在渲染三级章节字幕时使用
-  const renderSubSubChapterSubtitles = (subSubChapterSubtitles: Subtitle[], chapterIndex: number, subIndex: number, subSubIndex: number) => {
-    const id = `subsubchapter-subtitles-${chapterIndex}-${subIndex}-${subSubIndex}`;
-    const shouldShowCollapse = subSubChapterSubtitles.length > 5;
-    const displaySubtitles = isCollapsed(id) ? subSubChapterSubtitles.slice(0, 5) : subSubChapterSubtitles;
-
-    return (
-      <div className="bg-gray-800/50 rounded-lg p-2">
-        <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-          <div className="flex items-center gap-2">
-            <span>💬</span>
-            <span>字幕内容</span>
-          </div>
-          {shouldShowCollapse && (
-            <button
-              onClick={() => toggleCollapse(id)}
-              className="text-blue-400 hover:text-blue-300 text-xs inline-flex items-center gap-1"
-            >
-              {isCollapsed(id) ? (
-                <>
-                  <ChevronDownIcon className="w-3 h-3" />
-                  <span>展开更多</span>
-                </>
-              ) : (
-                <>
-                  <ChevronUpIcon className="w-3 h-3" />
-                  <span>收起</span>
-                </>
-              )}
-            </button>
-          )}
-        </div>
-        <div className="bg-gray-900/30 rounded-lg p-2">
-          {displaySubtitles.map((subtitle, subSubSubIndex) => 
-            renderSubtitle(subtitle, `subsubchapter-${chapterIndex}-${subIndex}-${subSubIndex}-${subSubSubIndex}`)
-          )}
-        </div>
-      </div>
-    );
-  };
+  // 监听 currentTime 变化，处理滚动和高亮
+  useEffect(() => {
+    // 处理文章视图的滚动
+    if (activeTab === 'article' && activeChapterRef.current) {
+      const target = activeChapterRef.current;
+      const targetId = target.id;
+      
+      if (targetId) {
+        scroller.scrollTo(targetId, {
+          duration: 800,
+          smooth: true,
+          offset: -100, // 向上偏移，使目标元素位于视图中间偏上位置
+          containerId: 'article-scroll-area'
+        });
+      }
+    }
+  }, [currentTime, activeTab]);
 
   // 渲染章节列表
   const renderChapterList = () => {
@@ -721,33 +570,12 @@ export function VideoContent({
                 className={`bg-gray-700/50 rounded-lg p-6 space-y-4 transition-colors duration-300 ${isActiveChapter ? 'ring-2 ring-blue-500' : ''}`}
               >
                 <div className="flex items-start gap-2">
-                  <div className="flex items-center gap-1 text-sm text-gray-400">
-                    {chapter.timeStart && (
-                      <>
-                        <button
-                          onClick={() => chapter.timeStart && onTimeClick(parseTimestamp(chapter.timeStart))}
-                          className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                        >
-                          {chapter.timeStart}
-                        </button>
-                        <span>-</span>
-                      </>
-                    )}
-                    {chapter.timeEnd ? (
-                      <button
-                        onClick={() => chapter.timeEnd && onTimeClick(parseTimestamp(chapter.timeEnd))}
-                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                      >
-                        {chapter.timeEnd}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => onTimeClick(chapter.timestamp)}
-                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                      >
-                        {chapter.time}
-                      </button>
-                    )}
+                  <div className="flex-none">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-400">{formatTime(item.start)}</span>
+                      <span className="text-gray-600">-</span>
+                      <span className="text-sm text-gray-400">{formatTime(item.end)}</span>
+                    </div>
                   </div>
                   <h3 className={`text-white font-medium text-lg ${isActiveChapter ? 'text-blue-300' : ''}`}>{chapter.content}</h3>
                 </div>
@@ -758,9 +586,7 @@ export function VideoContent({
                   const subChapterSubtitles = subtitles.filter(subtitle => {
                     const subtitleStart = subtitle.timeStart ? parseTimestamp(subtitle.timeStart) : parseTimestamp(subtitle.time);
                     const subtitleEnd = subtitle.timeEnd ? parseTimestamp(subtitle.timeEnd) : parseTimestamp(subtitle.time);
-                    const subChapterStart = subChapter.timeStart ? parseTimestamp(subChapter.timeStart) : subChapter.timestamp;
-                    const subChapterEnd = subChapter.timeEnd ? parseTimestamp(subChapter.timeEnd) : subChapter.timestamp;
-                    return subtitleStart >= subChapterStart && subtitleEnd <= subChapterEnd;
+                    return subtitleStart >= parseTimestamp(subChapter.timeStart) && subtitleEnd <= parseTimestamp(subChapter.timeEnd);
                   });
 
                   return (
@@ -770,41 +596,25 @@ export function VideoContent({
                       className={`ml-8 space-y-3 ${isActiveSubChapter ? 'bg-blue-500/10 rounded-lg p-3' : ''}`}
                     >
                       <div className="flex items-start gap-2">
-                        <div className="flex items-center gap-1 text-sm text-gray-400">
-                          <button
-                            onClick={() => onTimeClick(parseTimestamp(subChapter.timeStart))}
-                            className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                          >
-                            {subChapter.timeStart}
-                          </button>
-                          <span>-</span>
-                          <button
-                            onClick={() => onTimeClick(parseTimestamp(subChapter.timeEnd))}
-                            className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                          >
-                            {subChapter.timeEnd}
-                          </button>
+                        <div className="flex-none">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-400">{subChapter.timeStart}</span>
+                            <span className="text-gray-600">-</span>
+                            <span className="text-sm text-gray-400">{subChapter.timeEnd}</span>
+                          </div>
                         </div>
-                        <h4 className={`text-white font-medium ${isActiveSubChapter ? 'text-blue-300' : ''}`}>{subChapter.content}</h4>
+                        <h4 className={`text-white font-medium text-base ${isActiveSubChapter ? 'text-blue-300' : ''}`}>{subChapter.content}</h4>
                       </div>
 
-                      {/* 子章节对应的字幕内容 */}
-                      {subChapterSubtitles.length > 0 && (
-                        <div className="ml-4">
-                          {renderSubChapterSubtitles(subChapterSubtitles, index, subIndex)}
-                        </div>
-                      )}
-                      
+                      {/* 渲染三级章节 */}
                       {subChapter.children && subChapter.children.map((subSubChapter, subSubIndex) => {
                         const isActiveSubSubChapter = activeChapterInfo?.subSubChapter === subSubChapter;
                         const subSubChapterSubtitles = subtitles.filter(subtitle => {
                           const subtitleStart = subtitle.timeStart ? parseTimestamp(subtitle.timeStart) : parseTimestamp(subtitle.time);
                           const subtitleEnd = subtitle.timeEnd ? parseTimestamp(subtitle.timeEnd) : parseTimestamp(subtitle.time);
-                          const subSubChapterStart = subSubChapter.timeStart ? parseTimestamp(subSubChapter.timeStart) : subSubChapter.timestamp;
-                          const subSubChapterEnd = subSubChapter.timeEnd ? parseTimestamp(subSubChapter.timeEnd) : subSubChapter.timestamp;
-                          return subtitleStart >= subSubChapterStart && subtitleEnd <= subSubChapterEnd;
+                          return subtitleStart >= parseTimestamp(subSubChapter.timeStart) && subtitleEnd <= parseTimestamp(subSubChapter.timeEnd);
                         });
-                        
+
                         return (
                           <div 
                             key={`subsub-${index}-${subIndex}-${subSubIndex}`}
@@ -812,36 +622,48 @@ export function VideoContent({
                             className={`ml-8 space-y-2 ${isActiveSubSubChapter ? 'bg-blue-500/10 rounded-lg p-2' : ''}`}
                           >
                             <div className="flex items-start gap-2">
-                              <div className="flex items-center gap-1 text-sm text-gray-400">
-                                <button
-                                  onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeStart))}
-                                  className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                >
-                                  {subSubChapter.timeStart}
-                                </button>
-                                <span>-</span>
-                                <button
-                                  onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeEnd))}
-                                  className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                >
-                                  {subSubChapter.timeEnd}
-                                </button>
+                              <div className="flex-none">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-400">{subSubChapter.timeStart}</span>
+                                  <span className="text-gray-600">-</span>
+                                  <span className="text-sm text-gray-400">{subSubChapter.timeEnd}</span>
+                                </div>
                               </div>
                               <h5 className={`text-white font-medium text-sm ${isActiveSubSubChapter ? 'text-blue-300' : ''}`}>{subSubChapter.content}</h5>
                             </div>
 
-                            {/* 三级章节对应的字幕内容 */}
+                            {/* 渲染字幕 */}
                             {subSubChapterSubtitles.length > 0 && (
-                              <div className="ml-4">
-                                {renderSubSubChapterSubtitles(subSubChapterSubtitles, index, subIndex, subSubIndex)}
+                              <div className="ml-8 space-y-2">
+                                {subSubChapterSubtitles.map((subtitle, subSubSubIndex) => 
+                                  renderSubtitle(subtitle, `subsubchapter-${index}-${subIndex}-${subSubIndex}-${subSubSubIndex}`)
+                                )}
                               </div>
                             )}
                           </div>
                         );
                       })}
+
+                      {/* 渲染字幕 */}
+                      {subChapterSubtitles.length > 0 && (
+                        <div className="ml-8 space-y-2">
+                          {subChapterSubtitles.map((subtitle, subSubIndex) => 
+                            renderSubtitle(subtitle, `subchapter-${index}-${subIndex}-${subSubIndex}`)
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
+
+                {/* 渲染字幕 */}
+                {item.subtitles.length > 0 && (
+                  <div className="ml-8 space-y-2">
+                    {item.subtitles.map((subtitle, subIndex) => 
+                      renderSubtitle(subtitle, `chapter-${index}-${subIndex}`)
+                    )}
+                  </div>
+                )}
               </div>
             );
           }
@@ -875,24 +697,6 @@ export function VideoContent({
                     </div>
                   </div>
                 )}
-              </div>
-            </ScrollArea>
-          </div>
-        )}
-
-        {activeTab === 'subtitles' && (
-          <div className="h-full bg-gray-800 rounded-lg">
-            <ScrollArea 
-              className="h-full" 
-              ref={chapterListRef}
-              id="chapter-scroll-area"
-            >
-              <div className="p-4 sm:p-6">
-                <VideoSubtitles
-                  subtitles={subtitles}
-                  currentTime={currentTime}
-                  onTimeClick={onTimeClick}
-                />
               </div>
             </ScrollArea>
           </div>
@@ -1077,18 +881,16 @@ export function VideoContent({
         )}
 
         {activeTab === 'mindmap' && (
-          <div className="h-full bg-gray-800 rounded-lg overflow-hidden">
-            {mindmapContent ? (
-              mindmapContent.trim().startsWith('```mermaid') ? (
-                <MermaidRenderer code={mindmapContent} className="p-4" />
-              ) : (
-                <div className="p-6 text-gray-200 whitespace-pre-line">
-                  {mindmapContent}
-                </div>
-              )
-            ) : (
-              <MindMap data={mindmapData} />
-            )}
+          <div className="h-full bg-gray-800 rounded-lg">
+            <ScrollArea className="h-full">
+              <div className="p-4 sm:p-6">
+                {mindmapContent ? (
+                  <MermaidRenderer code={mindmapContent} />
+                ) : (
+                  <div className="text-gray-400 text-center">暂无思维导图内容</div>
+                )}
+              </div>
+            </ScrollArea>
           </div>
         )}
       </div>
