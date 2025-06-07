@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Tabs } from '@/components/ui/Tabs';
 import { ScrollArea } from '@/components/ui/ScrollArea';
 import { 
@@ -13,6 +13,7 @@ import { VideoSubtitles } from '@/components/VideoSubtitles';
 import { MindMap } from '@/components/MindMap';
 import { Node, Edge } from 'reactflow';
 import { MermaidRenderer } from '@/components/MermaidRenderer';
+import { Element, scroller, Element as ScrollElement } from 'react-scroll';
 
 interface Subtitle {
   id: string;
@@ -70,6 +71,13 @@ function parseTimestamp(timestamp: string | undefined): number {
   }
 }
 
+// Helper function to format seconds to MM:SS
+function formatTime(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
 export function VideoContent({ 
   highlights, 
   thoughts, 
@@ -80,11 +88,83 @@ export function VideoContent({
   currentTime,
   onTimeClick
 }: VideoContentProps) {
-  const [activeTab, setActiveTab] = useState('subtitles');
+  const [activeTab, setActiveTab] = useState('article');
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
   const [collapsedStates, setCollapsedStates] = useState<Record<string, boolean>>({});
   const summaryScrollRef = useRef<HTMLDivElement>(null);
+  const articleScrollRef = useRef<HTMLDivElement>(null);
+  const activeSubtitleRef = useRef<HTMLDivElement>(null);
+  const chapterListRef = useRef<HTMLDivElement>(null);
+  const activeChapterRef = useRef<HTMLDivElement>(null);
+
+  // 查找当前激活的章节
+  const findActiveChapter = (chapters: Chapter[], currentTime: number): { chapter: Chapter; subChapter?: Chapter; subSubChapter?: Chapter } | null => {
+    for (const chapter of chapters) {
+      const chapterStart = chapter.timeStart ? parseTimestamp(chapter.timeStart) : chapter.timestamp;
+      const chapterEnd = chapter.timeEnd ? parseTimestamp(chapter.timeEnd) : chapter.timestamp;
+      
+      if (currentTime >= chapterStart && currentTime <= chapterEnd) {
+        // 检查子章节
+        if (chapter.children && chapter.children.length > 0) {
+          for (const subChapter of chapter.children) {
+            const subChapterStart = subChapter.timeStart ? parseTimestamp(subChapter.timeStart) : subChapter.timestamp;
+            const subChapterEnd = subChapter.timeEnd ? parseTimestamp(subChapter.timeEnd) : subChapter.timestamp;
+            
+            if (currentTime >= subChapterStart && currentTime <= subChapterEnd) {
+              // 检查三级章节
+              if (subChapter.children && subChapter.children.length > 0) {
+                for (const subSubChapter of subChapter.children) {
+                  const subSubChapterStart = subSubChapter.timeStart ? parseTimestamp(subSubChapter.timeStart) : subSubChapter.timestamp;
+                  const subSubChapterEnd = subSubChapter.timeEnd ? parseTimestamp(subSubChapter.timeEnd) : subSubChapter.timestamp;
+                  
+                  if (currentTime >= subSubChapterStart && currentTime <= subSubChapterEnd) {
+                    return { chapter, subChapter, subSubChapter };
+                  }
+                }
+              }
+              return { chapter, subChapter };
+            }
+          }
+        }
+        return { chapter };
+      }
+    }
+    return null;
+  };
+
+  // 监听 currentTime 变化，处理滚动和高亮
+  useEffect(() => {
+    // 处理文章视图的滚动
+    if (activeTab === 'article' && activeSubtitleRef.current) {
+      const target = activeSubtitleRef.current;
+      const targetId = target.id;
+      
+      if (targetId) {
+        scroller.scrollTo(targetId, {
+          duration: 800,
+          smooth: true,
+          offset: -100, // 向上偏移，使目标元素位于视图中间偏上位置
+          containerId: 'article-scroll-area'
+        });
+      }
+    }
+
+    // 处理章节列表的滚动
+    if (activeTab === 'article' && activeChapterRef.current) {
+      const target = activeChapterRef.current;
+      const targetId = target.id;
+      
+      if (targetId) {
+        scroller.scrollTo(targetId, {
+          duration: 800,
+          smooth: true,
+          offset: -100, // 向上偏移，使目标元素位于视图中间偏上位置
+          containerId: 'chapter-scroll-area'
+        });
+      }
+    }
+  }, [currentTime, activeTab]);
 
   // 处理展开/收起状态
   const toggleExpand = (id: string) => {
@@ -185,6 +265,11 @@ export function VideoContent({
 
   const tabs = [
     {
+      id: 'article',
+      label: '文章视图',
+      icon: <DocumentDuplicateIcon className="w-4 h-4" />,
+    },
+    {
       id: 'subtitles',
       label: '字幕列表',
       icon: <ChatBubbleLeftRightIcon className="w-4 h-4" />,
@@ -198,11 +283,6 @@ export function VideoContent({
       id: 'mindmap',
       label: '思维导图',
       icon: <MapIcon className="w-4 h-4" />,
-    },
-    {
-      id: 'article',
-      label: '文章视图',
-      icon: <DocumentDuplicateIcon className="w-4 h-4" />,
     },
   ];
 
@@ -348,17 +428,21 @@ export function VideoContent({
   const renderSubtitle = (subtitle: Subtitle, id: string) => {
     const lines = subtitle.content.split('\n');
     const shouldShowExpand = lines.length > 3;
+    const isActive = Math.abs(subtitle.timestamp - currentTime) < 1; // 当前播放的字幕
 
     return (
-      <div 
+      <div
         key={id}
+        id={`subtitle-${id}`}
+        ref={isActive ? activeSubtitleRef : undefined}
         style={{display: 'inline-block', padding: '10px 10px'}}
+        className={`transition-colors duration-300 ${isActive ? 'bg-blue-500/20' : ''}`}
       >
         {subtitle.speaker && (
           <span className="text-sm text-gray-400 mr-2">{subtitle.speaker}:</span>
         )}
         <span 
-          className={`${!isExpanded(id) && shouldShowExpand ? 'line-clamp-3' : ''} cursor-pointer hover:text-blue-300 text-gray-200 text-sm`}
+          className={`${!isExpanded(id) && shouldShowExpand ? 'line-clamp-3' : ''} cursor-pointer hover:text-blue-300 text-gray-200 text-sm ${isActive ? 'text-blue-300' : ''}`}
           onClick={() => onTimeClick(subtitle.timestamp)}
         >
           {subtitle.content}
@@ -511,69 +595,304 @@ export function VideoContent({
     );
   };
 
+  // 渲染章节列表
+  const renderChapterList = () => {
+    const activeChapterInfo = findActiveChapter(chapters, currentTime);
+
+    // 处理第一层章节，添加旁白
+    const processedChapters = chapters.reduce<Array<{
+      type: 'chapter' | 'narration';
+      chapter?: Chapter;
+      start: number;
+      end: number;
+      subtitles: Subtitle[];
+    }>>((result, chapter, index) => {
+      const chapterStart = chapter.timeStart ? parseTimestamp(chapter.timeStart) : chapter.timestamp;
+      const chapterEnd = chapter.timeEnd ? parseTimestamp(chapter.timeEnd) : chapter.timestamp;
+
+      // 如果不是第一个章节，检查是否需要添加旁白
+      if (index > 0) {
+        const prevChapter = chapters[index - 1];
+        const prevChapterEnd = prevChapter.timeEnd ? parseTimestamp(prevChapter.timeEnd) : prevChapter.timestamp;
+        
+        if (chapterStart > prevChapterEnd) {
+          // 添加旁白
+          const narrationSubtitles = subtitles.filter(subtitle => {
+            const subtitleStart = subtitle.timeStart ? parseTimestamp(subtitle.timeStart) : parseTimestamp(subtitle.time);
+            const subtitleEnd = subtitle.timeEnd ? parseTimestamp(subtitle.timeEnd) : parseTimestamp(subtitle.time);
+            return subtitleStart >= prevChapterEnd && subtitleEnd <= chapterStart;
+          });
+
+          result.push({
+            type: 'narration',
+            start: prevChapterEnd,
+            end: chapterStart,
+            subtitles: narrationSubtitles
+          });
+        }
+      }
+
+      // 添加当前章节
+      const chapterSubtitles = subtitles.filter(subtitle => {
+        const subtitleStart = subtitle.timeStart ? parseTimestamp(subtitle.timeStart) : parseTimestamp(subtitle.time);
+        const subtitleEnd = subtitle.timeEnd ? parseTimestamp(subtitle.timeEnd) : parseTimestamp(subtitle.time);
+        return subtitleStart >= chapterStart && subtitleEnd <= chapterEnd;
+      });
+
+      result.push({
+        type: 'chapter',
+        chapter,
+        start: chapterStart,
+        end: chapterEnd,
+        subtitles: chapterSubtitles
+      });
+
+      return result;
+    }, []);
+
+    return (
+      <div className="space-y-6">
+        {processedChapters.map((item, index) => {
+          if (item.type === 'narration') {
+            return (
+              <div key={`narration-${index}`} className="bg-gray-700/50 rounded-lg p-6">
+                <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span>🎭</span>
+                    <span>旁白</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => onTimeClick(item.start)}
+                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                      >
+                        {formatTime(item.start)}
+                      </button>
+                      <span>-</span>
+                      <button
+                        onClick={() => onTimeClick(item.end)}
+                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                      >
+                        {formatTime(item.end)}
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => toggleCollapse(`narration-${index}`)}
+                    className="text-blue-400 hover:text-blue-300 text-sm inline-flex items-center gap-1"
+                  >
+                    {isCollapsed(`narration-${index}`) ? (
+                      <>
+                        <ChevronDownIcon className="w-4 h-4" />
+                        <span>展开</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronUpIcon className="w-4 h-4" />
+                        <span>收起</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                {!isCollapsed(`narration-${index}`) && (
+                  <div className="bg-gray-900/30 rounded-lg p-3">
+                    {item.subtitles.length > 0 ? (
+                      item.subtitles.map((subtitle, subIndex) => 
+                        renderSubtitle(subtitle, `narration-${index}-${subIndex}`)
+                      )
+                    ) : (
+                      <div className="text-gray-400 text-sm flex items-center gap-2">
+                        <span>✨</span>
+                        <span>这段没有旁白内容</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          } else {
+            const chapter = item.chapter!;
+            const isActiveChapter = activeChapterInfo?.chapter === chapter;
+
+            return (
+              <div 
+                key={`chapter-${index}`}
+                id={`chapter-${index}`}
+                ref={isActiveChapter ? activeChapterRef : undefined}
+                className={`bg-gray-700/50 rounded-lg p-6 space-y-4 transition-colors duration-300 ${isActiveChapter ? 'ring-2 ring-blue-500' : ''}`}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex items-center gap-1 text-sm text-gray-400">
+                    {chapter.timeStart && (
+                      <>
+                        <button
+                          onClick={() => chapter.timeStart && onTimeClick(parseTimestamp(chapter.timeStart))}
+                          className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                        >
+                          {chapter.timeStart}
+                        </button>
+                        <span>-</span>
+                      </>
+                    )}
+                    {chapter.timeEnd ? (
+                      <button
+                        onClick={() => chapter.timeEnd && onTimeClick(parseTimestamp(chapter.timeEnd))}
+                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                      >
+                        {chapter.timeEnd}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onTimeClick(chapter.timestamp)}
+                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                      >
+                        {chapter.time}
+                      </button>
+                    )}
+                  </div>
+                  <h3 className={`text-white font-medium text-lg ${isActiveChapter ? 'text-blue-300' : ''}`}>{chapter.content}</h3>
+                </div>
+
+                {/* 渲染子章节 */}
+                {chapter.children && chapter.children.map((subChapter, subIndex) => {
+                  const isActiveSubChapter = activeChapterInfo?.subChapter === subChapter;
+                  const subChapterSubtitles = subtitles.filter(subtitle => {
+                    const subtitleStart = subtitle.timeStart ? parseTimestamp(subtitle.timeStart) : parseTimestamp(subtitle.time);
+                    const subtitleEnd = subtitle.timeEnd ? parseTimestamp(subtitle.timeEnd) : parseTimestamp(subtitle.time);
+                    const subChapterStart = subChapter.timeStart ? parseTimestamp(subChapter.timeStart) : subChapter.timestamp;
+                    const subChapterEnd = subChapter.timeEnd ? parseTimestamp(subChapter.timeEnd) : subChapter.timestamp;
+                    return subtitleStart >= subChapterStart && subtitleEnd <= subChapterEnd;
+                  });
+
+                  return (
+                    <div 
+                      key={`sub-${index}-${subIndex}`}
+                      id={`subchapter-${index}-${subIndex}`}
+                      className={`ml-8 space-y-3 ${isActiveSubChapter ? 'bg-blue-500/10 rounded-lg p-3' : ''}`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="flex items-center gap-1 text-sm text-gray-400">
+                          <button
+                            onClick={() => onTimeClick(parseTimestamp(subChapter.timeStart))}
+                            className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                          >
+                            {subChapter.timeStart}
+                          </button>
+                          <span>-</span>
+                          <button
+                            onClick={() => onTimeClick(parseTimestamp(subChapter.timeEnd))}
+                            className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                          >
+                            {subChapter.timeEnd}
+                          </button>
+                        </div>
+                        <h4 className={`text-white font-medium ${isActiveSubChapter ? 'text-blue-300' : ''}`}>{subChapter.content}</h4>
+                      </div>
+
+                      {/* 子章节对应的字幕内容 */}
+                      {subChapterSubtitles.length > 0 && (
+                        <div className="ml-4">
+                          {renderSubChapterSubtitles(subChapterSubtitles, index, subIndex)}
+                        </div>
+                      )}
+                      
+                      {subChapter.children && subChapter.children.map((subSubChapter, subSubIndex) => {
+                        const isActiveSubSubChapter = activeChapterInfo?.subSubChapter === subSubChapter;
+                        const subSubChapterSubtitles = subtitles.filter(subtitle => {
+                          const subtitleStart = subtitle.timeStart ? parseTimestamp(subtitle.timeStart) : parseTimestamp(subtitle.time);
+                          const subtitleEnd = subtitle.timeEnd ? parseTimestamp(subtitle.timeEnd) : parseTimestamp(subtitle.time);
+                          const subSubChapterStart = subSubChapter.timeStart ? parseTimestamp(subSubChapter.timeStart) : subSubChapter.timestamp;
+                          const subSubChapterEnd = subSubChapter.timeEnd ? parseTimestamp(subSubChapter.timeEnd) : subSubChapter.timestamp;
+                          return subtitleStart >= subSubChapterStart && subtitleEnd <= subSubChapterEnd;
+                        });
+                        
+                        return (
+                          <div 
+                            key={`subsub-${index}-${subIndex}-${subSubIndex}`}
+                            id={`subsubchapter-${index}-${subIndex}-${subSubIndex}`}
+                            className={`ml-8 space-y-2 ${isActiveSubSubChapter ? 'bg-blue-500/10 rounded-lg p-2' : ''}`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <div className="flex items-center gap-1 text-sm text-gray-400">
+                                <button
+                                  onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeStart))}
+                                  className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                >
+                                  {subSubChapter.timeStart}
+                                </button>
+                                <span>-</span>
+                                <button
+                                  onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeEnd))}
+                                  className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                >
+                                  {subSubChapter.timeEnd}
+                                </button>
+                              </div>
+                              <h5 className={`text-white font-medium text-sm ${isActiveSubSubChapter ? 'text-blue-300' : ''}`}>{subSubChapter.content}</h5>
+                            </div>
+
+                            {/* 三级章节对应的字幕内容 */}
+                            {subSubChapterSubtitles.length > 0 && (
+                              <div className="ml-4">
+                                {renderSubSubChapterSubtitles(subSubChapterSubtitles, index, subIndex, subSubIndex)}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          }
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="h-full flex flex-col">
       <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
       
       <div className="flex-1 mt-2 sm:mt-4 min-h-0">
-        {activeTab === 'subtitles' && (
+        {activeTab === 'article' && (
           <div className="h-full bg-gray-800 rounded-lg">
-            <ScrollArea className="h-full">
+            <ScrollArea 
+              className="h-full" 
+              ref={articleScrollRef}
+              id="article-scroll-area"
+            >
               <div className="p-4 sm:p-6 space-y-4">
-                {/* 章节内容（从 summary tab 移动过来） */}
+                {/* 章节内容 */}
                 {chapters.length > 0 && (
                   <div className="space-y-4">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
                       <span>📑</span>
                       <span>章节内容</span>
                     </h2>
-                    <div className="space-y-4">
-                      {chapters.map((chapter, index) => (
-                        <div 
-                          key={`chapter-${index}`}
-                          className="bg-gray-700/50 rounded-lg p-6 space-y-3"
-                        >
-                          <div className="flex items-start gap-2">
-                            <div className="flex items-center gap-1 text-sm text-gray-400">
-                              {chapter.timeStart && (
-                                <>
-                                  <button
-                                    onClick={() => chapter.timeStart && onTimeClick(parseTimestamp(chapter.timeStart))}
-                                    className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                  >
-                                    {chapter.timeStart}
-                                  </button>
-                                  <span>-</span>
-                                </>
-                              )}
-                              {chapter.timeEnd ? (
-                                <button
-                                  onClick={() => chapter.timeEnd && onTimeClick(parseTimestamp(chapter.timeEnd))}
-                                  className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                >
-                                  {chapter.timeEnd}
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => onTimeClick(chapter.timestamp)}
-                                  className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                >
-                                  {chapter.time}
-                                </button>
-                              )}
-                            </div>
-                            <h3 className="text-white font-medium text-lg">{chapter.content}</h3>
-                          </div>
-                          
-                              
-                        </div>
-                      ))}
+                    <div id="chapter-scroll-area">
+                      {renderChapterList()}
                     </div>
                   </div>
                 )}
-             
-            
-    
+              </div>
+            </ScrollArea>
+          </div>
+        )}
+
+        {activeTab === 'subtitles' && (
+          <div className="h-full bg-gray-800 rounded-lg">
+            <ScrollArea 
+              className="h-full" 
+              ref={chapterListRef}
+              id="chapter-scroll-area"
+            >
+              <div className="p-4 sm:p-6">
+                <VideoSubtitles
+                  subtitles={subtitles}
+                  currentTime={currentTime}
+                  onTimeClick={onTimeClick}
+                />
               </div>
             </ScrollArea>
           </div>
@@ -770,146 +1089,6 @@ export function VideoContent({
             ) : (
               <MindMap data={mindmapData} />
             )}
-          </div>
-        )}
-
-        {activeTab === 'article' && (
-          <div className="h-full bg-gray-800 rounded-lg">
-            <ScrollArea className="h-full">
-              <div className="p-4 sm:p-6 space-y-4">
-                {/* 章节内容 */}
-                {chapters.length > 0 && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                      <span>📑</span>
-                      <span>章节内容</span>
-                    </h2>
-                    <div className="space-y-4">
-                      {chapters.map((chapter, index) => {
-                        const chapterSubtitles = subtitles.filter(subtitle => {
-                          const subtitleTime = parseTimestamp(subtitle.time);
-                          const chapterStart = chapter.timeStart ? parseTimestamp(chapter.timeStart) : chapter.timestamp;
-                          const chapterEnd = chapter.timeEnd ? parseTimestamp(chapter.timeEnd) : chapter.timestamp;
-                          return subtitleTime >= chapterStart && subtitleTime <= chapterEnd;
-                        });
-
-                        return (
-                          <div 
-                            key={`chapter-${index}`}
-                            className="bg-gray-700/50 rounded-lg p-6 space-y-4"
-                          >
-                            <div className="flex items-start gap-2">
-                              <div className="flex items-center gap-1 text-sm text-gray-400">
-                                {chapter.timeStart && (
-                                  <>
-                                    <button
-                                      onClick={() => chapter.timeStart && onTimeClick(parseTimestamp(chapter.timeStart))}
-                                      className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                    >
-                                      {chapter.timeStart}
-                                    </button>
-                                    <span>-</span>
-                                  </>
-                                )}
-                                {chapter.timeEnd ? (
-                                  <button
-                                    onClick={() => chapter.timeEnd && onTimeClick(parseTimestamp(chapter.timeEnd))}
-                                    className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                  >
-                                    {chapter.timeEnd}
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => onTimeClick(chapter.timestamp)}
-                                    className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                  >
-                                    {chapter.time}
-                                  </button>
-                                )}
-                              </div>
-                              <h3 className="text-white font-medium text-lg">{chapter.content}</h3>
-                            </div>
-
-                            {/* 章节对应的字幕内容 */}
-                            {chapterSubtitles.length > 0 && renderChapterSubtitles(chapterSubtitles, index)}
-                          
-                            {chapter.children && chapter.children.map((subChapter, subIndex) => {
-                              const subChapterSubtitles = subtitles.filter(subtitle => {
-                                const subtitleTime = parseTimestamp(subtitle.time);
-                                const subChapterStart = subChapter.timeStart ? parseTimestamp(subChapter.timeStart) : subChapter.timestamp;
-                                const subChapterEnd = subChapter.timeEnd ? parseTimestamp(subChapter.timeEnd) : subChapter.timestamp;
-                                return subtitleTime >= subChapterStart && subtitleTime <= subChapterEnd;
-                              });
-
-                              return (
-                                <div key={`sub-${index}-${subIndex}`} className="space-y-3">
-                                  <div className="flex items-start gap-2">
-                                    <div className="flex items-center gap-1 text-sm text-gray-400">
-                                      <button
-                                        onClick={() => onTimeClick(parseTimestamp(subChapter.timeStart))}
-                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                      >
-                                        {subChapter.timeStart}
-                                      </button>
-                                      <span>-</span>
-                                      <button
-                                        onClick={() => onTimeClick(parseTimestamp(subChapter.timeEnd))}
-                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                      >
-                                        {subChapter.timeEnd}
-                                      </button>
-                                    </div>
-                                    <h4 className="text-white font-medium">{subChapter.content}</h4>
-                                  </div>
-
-                                  {/* 子章节对应的字幕内容 */}
-                                  {subChapterSubtitles.length > 0 && renderSubChapterSubtitles(subChapterSubtitles, index, subIndex)}
-                                  
-                                  {subChapter.children && subChapter.children.map((subSubChapter, subSubIndex) => {
-                                    const subSubChapterSubtitles = subtitles.filter(subtitle => {
-                                      const subtitleTime = parseTimestamp(subtitle.time);
-                                      const subSubChapterStart = subSubChapter.timeStart ? parseTimestamp(subSubChapter.timeStart) : subSubChapter.timestamp;
-                                      const subSubChapterEnd = subSubChapter.timeEnd ? parseTimestamp(subSubChapter.timeEnd) : subSubChapter.timestamp;
-                                      return subtitleTime >= subSubChapterStart && subtitleTime <= subSubChapterEnd;
-                                    });
-
-                                    return (
-                                      <div key={`subsub-${index}-${subIndex}-${subSubIndex}`} className="space-y-2">
-                                        <div className="flex items-start gap-2">
-                                          <div className="flex items-center gap-1 text-sm text-gray-400">
-                                            <button
-                                              onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeStart))}
-                                              className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                            >
-                                              {subSubChapter.timeStart}
-                                            </button>
-                                            <span>-</span>
-                                            <button
-                                              onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeEnd))}
-                                              className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                            >
-                                              {subSubChapter.timeEnd}
-                                            </button>
-                                          </div>
-                                          <h5 className="text-white font-medium text-sm">{subSubChapter.content}</h5>
-                                        </div>
-
-                                        {/* 三级章节对应的字幕内容 */}
-                                        {subSubChapterSubtitles.length > 0 && renderSubSubChapterSubtitles(subSubChapterSubtitles, index, subIndex, subSubIndex)}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
           </div>
         )}
       </div>
