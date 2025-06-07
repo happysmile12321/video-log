@@ -390,88 +390,78 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
 function parseSubtitles(subtitlesText: string) {
   console.log('开始解析字幕文本:', subtitlesText.substring(0, 500) + '...');
   
-  // 处理用户描述的格式：去掉第一行并清理格式
+  // 处理字幕格式：去掉第一行并清理格式
   let cleanedText = subtitlesText.trim();
   
-  // 如果文本包含类似 "字幕\n:\n[{,…}]" 这样的格式，需要进行清理
-  if (cleanedText.includes('字幕') || cleanedText.includes('text')) {
-    const lines = cleanedText.split(/\r?\n/);
-    let startIndex = 0;
+  // 去除 "Active code page: 65001" 这样的第一行
+  const lines = cleanedText.split(/\r?\n/);
+  let startIndex = 0;
+  
+  // 查找实际字幕内容的开始位置
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
     
-    // 查找实际字幕内容的开始位置
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      
-      // 跳过包含格式标记的行
-      if (line === '字幕' || line === ':' || 
-          line.match(/^\[?\{.*\}?\]?$/) || 
-          line === '0' || line === 'text' || 
-          line.match(/^[\d\s]*$/) ||
-          line.includes('Active code page')) {
-        startIndex = i + 1;
-        continue;
-      }
-      
-      // 如果找到看起来像字幕序号的行，开始解析
-      if (line.match(/^\d+$/)) {
-        startIndex = i;
-        break;
-      }
+    // 跳过以下类型的行：
+    // 1. Active code page 行
+    // 2. 格式标记行（如 "字幕", ":", "[{,…}]" 等）
+    if (line.includes('Active code page') ||
+        line === '字幕' || line === ':' || 
+        line.match(/^\[?\{.*\}?\]?$/) || 
+        line === '0' || line === 'text' ||
+        (line.match(/^[\d\s]*$/) && line.length < 3)) {
+      startIndex = i + 1;
+      continue;
     }
     
-    cleanedText = lines.slice(startIndex).join('\n');
+    // 如果找到看起来像字幕序号的行（纯数字，通常是1、2、3...），开始解析
+    if (line.match(/^\d+$/)) {
+      startIndex = i;
+      break;
+    }
   }
   
-  // 去除不必要的前缀
-  cleanedText = cleanedText.replace(/^Active code page: \d+\\?r?\\?n/, '');
+  cleanedText = lines.slice(startIndex).join('\n');
+  
+  // 清理转义字符
   cleanedText = cleanedText.replace(/\\r\\n/g, '\n');
   cleanedText = cleanedText.replace(/\\n/g, '\n');
   
   console.log('清理后的字幕文本前500字符:', cleanedText.substring(0, 500));
   
-  const lines = cleanedText.split(/\r?\n/);
+  // 解析标准 SRT 格式
+  const subtitleBlocks = cleanedText.split(/\n\s*\n/).filter(block => block.trim());
   const subtitles = [];
-  let currentSubtitle = null;
 
-  for (const line of lines) {
-    const trimmedLine = line.trim();
-    if (!trimmedLine) continue;
-
-    // Match subtitle pattern like "1 00:00:00,000 --> 00:00:11,680"
-    const timeMatch = trimmedLine.match(/^(\d+)\s+(\d{2}:\d{2}:\d{2}[,\.]\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2}[,\.]\d{3})/);
-    if (timeMatch) {
-      if (currentSubtitle) {
-        subtitles.push(currentSubtitle);
-      }
-      currentSubtitle = {
-        id: timeMatch[1],
-        timestamp: parseTimestamp(timeMatch[2]),
-        time: timeMatch[2].split(/[,\.]/)[0],
-        speaker: '',
-        content: '',
-      };
-    } else if (trimmedLine.match(/^\d+$/)) {
-      // 如果是纯数字行，可能是字幕序号，准备下一个字幕
-      if (currentSubtitle) {
-        subtitles.push(currentSubtitle);
-        currentSubtitle = null;
-      }
-    } else if (currentSubtitle) {
-      if (!currentSubtitle.content) {
-        currentSubtitle.content = trimmedLine;
-      } else {
-        currentSubtitle.content += '\n' + trimmedLine;
-      }
-    }
-  }
-
-  if (currentSubtitle) {
-    subtitles.push(currentSubtitle);
+  for (const block of subtitleBlocks) {
+    const blockLines = block.trim().split(/\r?\n/);
+    if (blockLines.length < 3) continue; // 至少需要3行：序号、时间、内容
+    
+    // 第一行：序号
+    const id = blockLines[0].trim();
+    if (!id.match(/^\d+$/)) continue; // 必须是纯数字
+    
+    // 第二行：时间戳
+    const timeLine = blockLines[1].trim();
+    const timeMatch = timeLine.match(/^(\d{2}:\d{2}:\d{2}[,\.]\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2}[,\.]\d{3})/);
+    if (!timeMatch) continue; // 必须有正确的时间格式
+    
+    // 第三行及之后：字幕内容
+    const content = blockLines.slice(2).join('\n').trim();
+    if (!content) continue; // 必须有内容
+    
+    subtitles.push({
+      id: id,
+      timestamp: parseTimestamp(timeMatch[1]),
+      time: timeMatch[1].split(/[,\.]/)[0],
+      speaker: '',
+      content: content,
+    });
   }
 
   console.log('解析出的字幕条目数量:', subtitles.length);
   if (subtitles.length > 0) {
     console.log('第一条字幕示例:', subtitles[0]);
+    console.log('最后一条字幕示例:', subtitles[subtitles.length - 1]);
   }
   return subtitles;
 }

@@ -73,7 +73,11 @@ export function VideoContent({
     const paragraphs: Array<{
       startTime: number;
       time: string;
-      content: string[];
+      content: Array<{
+        text: string;
+        timestamp: number;
+        time: string;
+      }>;
       speaker: string;
     }> = [];
     
@@ -94,12 +98,20 @@ export function VideoContent({
         currentParagraph = {
           startTime: subtitle.timestamp,
           time: subtitle.time,
-          content: [subtitle.content],
+          content: [{
+            text: subtitle.content,
+            timestamp: subtitle.timestamp,
+            time: subtitle.time
+          }],
           speaker: subtitle.speaker
         };
         paragraphs.push(currentParagraph);
       } else {
-        (currentParagraph as typeof paragraphs[0]).content.push(subtitle.content);
+        (currentParagraph as typeof paragraphs[0]).content.push({
+          text: subtitle.content,
+          timestamp: subtitle.timestamp,
+          time: subtitle.time
+        });
       }
     });
     
@@ -478,7 +490,7 @@ export function VideoContent({
                       )}
                     </div>
                     <p className="text-gray-200 text-base leading-relaxed whitespace-pre-line">
-                      {paragraph.content.join(' ')}
+                      {paragraph.content.map(item => item.text).join(' ')}
                     </p>
                   </div>
                 ))}
@@ -691,7 +703,7 @@ export function VideoContent({
                 {subtitles.length > 0 ? (
                   <div className="space-y-4">
                     {getMergedSubtitles().map((paragraph, index) => {
-                      const content = paragraph.content.join(' ');
+                      const content = paragraph.content.map(item => item.text).join(' ');
                       const topic = generateTopic(content);
                       
                       return (
@@ -711,10 +723,11 @@ export function VideoContent({
                             {paragraph.content.map((sentence, sentenceIndex) => (
                               <button
                                 key={sentenceIndex}
-                                onClick={() => onTimeClick(paragraph.startTime)}
+                                onClick={() => onTimeClick(sentence.timestamp)}
                                 className="inline hover:text-blue-400 hover:underline cursor-pointer transition-colors duration-200"
+                                title={`跳转到 ${sentence.time}`}
                               >
-                                {sentence}{' '}
+                                {sentence.text}{' '}
                               </button>
                             ))}
                           </p>
