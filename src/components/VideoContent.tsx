@@ -83,6 +83,7 @@ export function VideoContent({
   const [activeTab, setActiveTab] = useState('subtitles');
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
+  const [collapsedStates, setCollapsedStates] = useState<Record<string, boolean>>({});
   const summaryScrollRef = useRef<HTMLDivElement>(null);
 
   // 处理展开/收起状态
@@ -93,8 +94,19 @@ export function VideoContent({
     }));
   };
 
+  // 处理组件折叠状态
+  const toggleCollapse = (id: string) => {
+    setCollapsedStates(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
   // 获取展开状态
   const isExpanded = (id: string) => expandedStates[id] || false;
+  
+  // 获取折叠状态
+  const isCollapsed = (id: string) => collapsedStates[id] || false;
 
   console.log(subtitles);
 
@@ -378,14 +390,38 @@ export function VideoContent({
 
   // 在渲染章节字幕时使用
   const renderChapterSubtitles = (chapterSubtitles: Subtitle[], chapterIndex: number) => {
+    const id = `chapter-subtitles-${chapterIndex}`;
+    const shouldShowCollapse = chapterSubtitles.length > 5;
+    const displaySubtitles = isCollapsed(id) ? chapterSubtitles.slice(0, 5) : chapterSubtitles;
+
     return (
       <div className="bg-gray-800/50 rounded-lg p-4">
-        <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-          <span>💬</span>
-          <span>字幕内容</span>
+        <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+          <div className="flex items-center gap-2">
+            <span>💬</span>
+            <span>字幕内容</span>
+          </div>
+          {shouldShowCollapse && (
+            <button
+              onClick={() => toggleCollapse(id)}
+              className="text-blue-400 hover:text-blue-300 text-sm inline-flex items-center gap-1"
+            >
+              {isCollapsed(id) ? (
+                <>
+                  <ChevronDownIcon className="w-4 h-4" />
+                  <span>展开更多</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUpIcon className="w-4 h-4" />
+                  <span>收起</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
         <div className="bg-gray-900/30 rounded-lg p-3">
-          {chapterSubtitles.map((subtitle, subIndex) => 
+          {displaySubtitles.map((subtitle, subIndex) => 
             renderSubtitle(subtitle, `chapter-${chapterIndex}-${subIndex}`)
           )}
         </div>
@@ -395,14 +431,38 @@ export function VideoContent({
 
   // 在渲染子章节字幕时使用
   const renderSubChapterSubtitles = (subChapterSubtitles: Subtitle[], chapterIndex: number, subIndex: number) => {
+    const id = `subchapter-subtitles-${chapterIndex}-${subIndex}`;
+    const shouldShowCollapse = subChapterSubtitles.length > 5;
+    const displaySubtitles = isCollapsed(id) ? subChapterSubtitles.slice(0, 5) : subChapterSubtitles;
+
     return (
       <div className="bg-gray-800/50 rounded-lg p-3">
-        <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-          <span>💬</span>
-          <span>字幕内容</span>
+        <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+          <div className="flex items-center gap-2">
+            <span>💬</span>
+            <span>字幕内容</span>
+          </div>
+          {shouldShowCollapse && (
+            <button
+              onClick={() => toggleCollapse(id)}
+              className="text-blue-400 hover:text-blue-300 text-sm inline-flex items-center gap-1"
+            >
+              {isCollapsed(id) ? (
+                <>
+                  <ChevronDownIcon className="w-4 h-4" />
+                  <span>展开更多</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUpIcon className="w-4 h-4" />
+                  <span>收起</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
         <div className="bg-gray-900/30 rounded-lg p-3">
-          {subChapterSubtitles.map((subtitle, subSubIndex) => 
+          {displaySubtitles.map((subtitle, subSubIndex) => 
             renderSubtitle(subtitle, `subchapter-${chapterIndex}-${subIndex}-${subSubIndex}`)
           )}
         </div>
@@ -412,14 +472,38 @@ export function VideoContent({
 
   // 在渲染三级章节字幕时使用
   const renderSubSubChapterSubtitles = (subSubChapterSubtitles: Subtitle[], chapterIndex: number, subIndex: number, subSubIndex: number) => {
+    const id = `subsubchapter-subtitles-${chapterIndex}-${subIndex}-${subSubIndex}`;
+    const shouldShowCollapse = subSubChapterSubtitles.length > 5;
+    const displaySubtitles = isCollapsed(id) ? subSubChapterSubtitles.slice(0, 5) : subSubChapterSubtitles;
+
     return (
       <div className="bg-gray-800/50 rounded-lg p-2">
-        <div className="flex items-center gap-2 text-xs text-gray-400 mb-2">
-          <span>💬</span>
-          <span>字幕内容</span>
+        <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
+          <div className="flex items-center gap-2">
+            <span>💬</span>
+            <span>字幕内容</span>
+          </div>
+          {shouldShowCollapse && (
+            <button
+              onClick={() => toggleCollapse(id)}
+              className="text-blue-400 hover:text-blue-300 text-xs inline-flex items-center gap-1"
+            >
+              {isCollapsed(id) ? (
+                <>
+                  <ChevronDownIcon className="w-3 h-3" />
+                  <span>展开更多</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUpIcon className="w-3 h-3" />
+                  <span>收起</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
         <div className="bg-gray-900/30 rounded-lg p-2">
-          {subSubChapterSubtitles.map((subtitle, subSubSubIndex) => 
+          {displaySubtitles.map((subtitle, subSubSubIndex) => 
             renderSubtitle(subtitle, `subsubchapter-${chapterIndex}-${subIndex}-${subSubIndex}-${subSubSubIndex}`)
           )}
         </div>
