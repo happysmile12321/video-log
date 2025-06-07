@@ -6,7 +6,8 @@ import {
   DocumentDuplicateIcon,
   MapIcon,
   ChatBubbleLeftRightIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import { VideoSubtitles } from '@/components/VideoSubtitles';
 import { MindMap } from '@/components/MindMap';
@@ -373,184 +374,15 @@ export function VideoContent({
                             <h3 className="text-white font-medium text-lg">{chapter.content}</h3>
                           </div>
                           
-                          {/* 子章节列表 */}
-                          {chapter.children && chapter.children.length > 0 && (
-                            <div className="pl-4 space-y-3">
-                              {chapter.children.map((subChapter: Chapter, subIndex: number) => (
-                                <div key={`sub-${index}-${subIndex}`} className="space-y-2">
-                                  <div className="flex items-start gap-2">
-                                    <div className="flex items-center gap-1 text-sm text-gray-400">
-                                      <button
-                                        onClick={() => onTimeClick(parseTimestamp(subChapter.timeStart))}
-                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                      >
-                                        {subChapter.timeStart}
-                                      </button>
-                                      <span>-</span>
-                                      <button
-                                        onClick={() => onTimeClick(parseTimestamp(subChapter.timeEnd))}
-                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                      >
-                                        {subChapter.timeEnd}
-                                      </button>
-                                    </div>
-                                    <h4 className="text-white font-medium">{subChapter.content}</h4>
-                                  </div>
-                                  
-                                  {/* 三级章节 */}
-                                  {subChapter.children && subChapter.children.length > 0 && (
-                                    <div className="pl-4 space-y-2">
-                                      {subChapter.children.map((subSubChapter: Chapter, subSubIndex: number) => (
-                                        <div key={`subsub-${index}-${subIndex}-${subSubIndex}`} className="space-y-1">
-                                          <div className="flex items-start gap-2">
-                                            <div className="flex items-center gap-1 text-sm text-gray-400">
-                                              <button
-                                                onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeStart))}
-                                                className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                              >
-                                                {subSubChapter.timeStart}
-                                              </button>
-                                              <span>-</span>
-                                              <button
-                                                onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeEnd))}
-                                                className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                              >
-                                                {subSubChapter.timeEnd}
-                                              </button>
-                                            </div>
-                                            <h5 className="text-white font-medium text-sm">{subSubChapter.content}</h5>
-                                          </div>
-                                          
-                                          {/* 四级章节 */}
-                                          {subSubChapter.children && subSubChapter.children.length > 0 && (
-                                            <div className="pl-4 space-y-1">
-                                              {subSubChapter.children.map((subSubSubChapter: Chapter, subSubSubIndex: number) => (
-                                                <div key={`subsubsub-${index}-${subIndex}-${subSubIndex}-${subSubSubIndex}`} className="space-y-1">
-                                                  <div className="flex items-start gap-2">
-                                                    <div className="flex items-center gap-1 text-xs text-gray-400">
-                                                      <button
-                                                        onClick={() => onTimeClick(parseTimestamp(subSubSubChapter.timeStart))}
-                                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                                      >
-                                                        {subSubSubChapter.timeStart}
-                                                      </button>
-                                                      <span>-</span>
-                                                      <button
-                                                        onClick={() => onTimeClick(parseTimestamp(subSubSubChapter.timeEnd))}
-                                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                                      >
-                                                        {subSubSubChapter.timeEnd}
-                                                      </button>
-                                                    </div>
-                                                    <h6 className="text-white font-medium text-xs">{subSubSubChapter.content}</h6>
-                                                  </div>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-
+                              
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-                {/* 字幕分段总结（原来在 summary） */}
-                {subtitles.length > 0 && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                      <span>📚</span>
-                      <span>章节总结</span>
-                    </h2>
-                    <div className="space-y-4">
-                      {subtitles.reduce((acc: Array<React.ReactElement>, subtitle, index, array) => {
-                        // 每5条字幕总结为一个章节
-                        if (index % 5 === 0) {
-                          const sectionSubtitles = array.slice(index, index + 5);
-                          const sectionContent = sectionSubtitles
-                            .map(s => s.content)
-                            .join(' ');
-                          const endSubtitle = array[Math.min(index + 4, array.length - 1)];
-                          
-                          acc.push(
-                            <div 
-                              key={subtitle.id}
-                              className="bg-gray-700/50 rounded-lg p-6 space-y-3"
-                            >
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => onTimeClick(subtitle.timestamp)}
-                                  className="text-sm text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                >
-                                  {subtitle.time}
-                                </button>
-                                <span className="text-gray-500">-</span>
-                                <button
-                                  onClick={() => onTimeClick(endSubtitle.timestamp)}
-                                  className="text-sm text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                >
-                                  {endSubtitle.time}
-                                </button>
-                              </div>
-                              <p className="text-gray-300 text-base leading-relaxed whitespace-pre-line">{sectionContent}</p>
-                            </div>
-                          );
-                        }
-                        return acc;
-                      }, [])}
-                    </div>
-                  </div>
-                )}
-                {/* 字幕原文段落 */}
-                {getMergedSubtitles().map((paragraph, index) => (
-                  <div 
-                    key={index}
-                    className="bg-gray-700/50 rounded-lg p-4 space-y-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      {paragraph.timeStart ? (
-                        <>
-                          <button
-                            onClick={() => onTimeClick(parseTimestamp(paragraph.timeStart))}
-                            className="text-sm text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                          >
-                            {paragraph.timeStart}
-                          </button>
-                          <span className="text-gray-500">-</span>
-                          <button
-                            onClick={() => onTimeClick(parseTimestamp(paragraph.timeEnd))}
-                            className="text-sm text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                          >
-                            {paragraph.timeEnd}
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => onTimeClick(paragraph.startTime)}
-                          className="text-sm text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                        >
-                          {paragraph.time}
-                        </button>
-                      )}
-                      {paragraph.speaker && (
-                        <span className="text-sm text-gray-400">
-                          {paragraph.speaker}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-gray-200 text-base leading-relaxed whitespace-pre-line">
-                      {paragraph.content.map(item => item.text).join(' ')}
-                    </p>
-                  </div>
-                ))}
+             
+            
+    
               </div>
             </ScrollArea>
           </div>
@@ -754,7 +586,7 @@ export function VideoContent({
           <div className="h-full bg-gray-800 rounded-lg">
             <ScrollArea className="h-full">
               <div className="p-4 sm:p-6 space-y-4">
-                {/* 章节内容（从 summary tab 移动过来） */}
+                {/* 章节内容 */}
                 {chapters.length > 0 && (
                   <div className="space-y-4">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -762,134 +594,297 @@ export function VideoContent({
                       <span>章节内容</span>
                     </h2>
                     <div className="space-y-4">
-                      {chapters.map((chapter, index) => (
-                        <div 
-                          key={`chapter-${index}`}
-                          className="bg-gray-700/50 rounded-lg p-6 space-y-3"
-                        >
-                          <div className="flex items-start gap-2">
-                            <div className="flex items-center gap-1 text-sm text-gray-400">
-                              {chapter.timeStart && (
-                                <>
+                      {chapters.map((chapter, index) => {
+                        // 获取该章节时间范围内的字幕
+                        const chapterSubtitles = subtitles.filter(subtitle => {
+                          const subtitleTime = parseTimestamp(subtitle.time);
+                          const chapterStart = chapter.timeStart ? parseTimestamp(chapter.timeStart) : chapter.timestamp;
+                          const chapterEnd = chapter.timeEnd ? parseTimestamp(chapter.timeEnd) : chapter.timestamp;
+                          return subtitleTime >= chapterStart && subtitleTime <= chapterEnd;
+                        });
+
+                        return (
+                          <div 
+                            key={`chapter-${index}`}
+                            className="bg-gray-700/50 rounded-lg p-6 space-y-4"
+                          >
+                            <div className="flex items-start gap-2">
+                              <div className="flex items-center gap-1 text-sm text-gray-400">
+                                {chapter.timeStart && (
+                                  <>
+                                    <button
+                                      onClick={() => chapter.timeStart && onTimeClick(parseTimestamp(chapter.timeStart))}
+                                      className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                    >
+                                      {chapter.timeStart}
+                                    </button>
+                                    <span>-</span>
+                                  </>
+                                )}
+                                {chapter.timeEnd ? (
                                   <button
-                                    onClick={() => chapter.timeStart && onTimeClick(parseTimestamp(chapter.timeStart))}
+                                    onClick={() => chapter.timeEnd && onTimeClick(parseTimestamp(chapter.timeEnd))}
                                     className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
                                   >
-                                    {chapter.timeStart}
+                                    {chapter.timeEnd}
                                   </button>
-                                  <span>-</span>
-                                </>
-                              )}
-                              {chapter.timeEnd ? (
-                                <button
-                                  onClick={() => chapter.timeEnd && onTimeClick(parseTimestamp(chapter.timeEnd))}
-                                  className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                >
-                                  {chapter.timeEnd}
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => onTimeClick(chapter.timestamp)}
-                                  className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                >
-                                  {chapter.time}
-                                </button>
-                              )}
+                                ) : (
+                                  <button
+                                    onClick={() => onTimeClick(chapter.timestamp)}
+                                    className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                  >
+                                    {chapter.time}
+                                  </button>
+                                )}
+                              </div>
+                              <h3 className="text-white font-medium text-lg">{chapter.content}</h3>
                             </div>
-                            <h3 className="text-white font-medium text-lg">{chapter.content}</h3>
-                          </div>
-                          
-                          {/* 子章节列表 */}
-                          {chapter.children && chapter.children.length > 0 && (
-                            <div className="pl-4 space-y-3">
-                              {chapter.children.map((subChapter: Chapter, subIndex: number) => (
-                                <div key={`sub-${index}-${subIndex}`} className="space-y-2">
-                                  <div className="flex items-start gap-2">
-                                    <div className="flex items-center gap-1 text-sm text-gray-400">
-                                      <button
-                                        onClick={() => onTimeClick(parseTimestamp(subChapter.timeStart))}
-                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                      >
-                                        {subChapter.timeStart}
-                                      </button>
-                                      <span>-</span>
-                                      <button
-                                        onClick={() => onTimeClick(parseTimestamp(subChapter.timeEnd))}
-                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                      >
-                                        {subChapter.timeEnd}
-                                      </button>
-                                    </div>
-                                    <h4 className="text-white font-medium">{subChapter.content}</h4>
-                                  </div>
-                                  
-                                  {/* 三级章节 */}
-                                  {subChapter.children && subChapter.children.length > 0 && (
-                                    <div className="pl-4 space-y-2">
-                                      {subChapter.children.map((subSubChapter: Chapter, subSubIndex: number) => (
-                                        <div key={`subsub-${index}-${subIndex}-${subSubIndex}`} className="space-y-1">
-                                          <div className="flex items-start gap-2">
-                                            <div className="flex items-center gap-1 text-sm text-gray-400">
-                                              <button
-                                                onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeStart))}
-                                                className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                              >
-                                                {subSubChapter.timeStart}
-                                              </button>
-                                              <span>-</span>
-                                              <button
-                                                onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeEnd))}
-                                                className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                              >
-                                                {subSubChapter.timeEnd}
-                                              </button>
-                                            </div>
-                                            <h5 className="text-white font-medium text-sm">{subSubChapter.content}</h5>
-                                          </div>
-                                          
-                                          {/* 四级章节 */}
-                                          {subSubChapter.children && subSubChapter.children.length > 0 && (
-                                            <div className="pl-4 space-y-1">
-                                              {subSubChapter.children.map((subSubSubChapter: Chapter, subSubSubIndex: number) => (
-                                                <div key={`subsubsub-${index}-${subIndex}-${subSubIndex}-${subSubSubIndex}`} className="space-y-1">
-                                                  <div className="flex items-start gap-2">
-                                                    <div className="flex items-center gap-1 text-xs text-gray-400">
-                                                      <button
-                                                        onClick={() => onTimeClick(parseTimestamp(subSubSubChapter.timeStart))}
-                                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                                      >
-                                                        {subSubSubChapter.timeStart}
-                                                      </button>
-                                                      <span>-</span>
-                                                      <button
-                                                        onClick={() => onTimeClick(parseTimestamp(subSubSubChapter.timeEnd))}
-                                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                                      >
-                                                        {subSubSubChapter.timeEnd}
-                                                      </button>
-                                                    </div>
-                                                    <h6 className="text-white font-medium text-xs">{subSubSubChapter.content}</h6>
-                                                  </div>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
+
+                            {/* 章节对应的字幕内容 */}
+                            {chapterSubtitles.length > 0 && (
+                              <div className="bg-gray-800/50 rounded-lg p-4">
+                                <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                                  <span>💬</span>
+                                  <span>字幕内容</span>
                                 </div>
-                              ))}
-                            </div>
-                          )}
+                                <div className="bg-gray-900/30 rounded-lg p-3">
+                                  {chapterSubtitles.map((subtitle, subIndex) => {
+                                    const [isExpanded, setIsExpanded] = useState(false);
+                                    const lines = subtitle.content.split('\n');
+                                    const shouldShowExpand = lines.length > 3;
 
+                                    return (
+                                      <div
+                                        style={{display: 'inline-block', padding: '10px 10px'}}
+                                      >
+                                        {subtitle.speaker && (
+                                          <span className="text-sm text-gray-400 mr-2">{subtitle.speaker}:</span>
+                                        )}
+                                        <span 
+                                          className={`${!isExpanded && shouldShowExpand ? 'line-clamp-3' : ''} cursor-pointer hover:text-blue-300 text-gray-200 text-sm`}
+                                          onClick={() => onTimeClick(subtitle.timestamp)}
+                                        >
+                                          {subtitle.content}
+                                        </span>
+                                        {shouldShowExpand && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setIsExpanded(!isExpanded);
+                                            }}
+                                            className="ml-2 text-blue-400 hover:text-blue-300 text-sm inline-flex items-center gap-1"
+                                          >
+                                            {isExpanded ? (
+                                              <>
+                                                <ChevronUpIcon className="w-4 h-4" />
+                                                <span>收起</span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <ChevronDownIcon className="w-4 h-4" />
+                                                <span>展开</span>
+                                              </>
+                                            )}
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          
+                            {/* 子章节列表 */}
+                            {chapter.children && chapter.children.length > 0 && (
+                              <div className="pl-4 space-y-4">
+                                {chapter.children.map((subChapter: Chapter, subIndex: number) => {
+                                  // 获取子章节时间范围内的字幕
+                                  const subChapterSubtitles = subtitles.filter(subtitle => {
+                                    const subtitleTime = parseTimestamp(subtitle.time);
+                                    const subChapterStart = subChapter.timeStart ? parseTimestamp(subChapter.timeStart) : subChapter.timestamp;
+                                    const subChapterEnd = subChapter.timeEnd ? parseTimestamp(subChapter.timeEnd) : subChapter.timestamp;
+                                    return subtitleTime >= subChapterStart && subtitleTime <= subChapterEnd;
+                                  });
 
-                        </div>
-                      ))}
+                                  return (
+                                    <div key={`sub-${index}-${subIndex}`} className="space-y-3">
+                                      <div className="flex items-start gap-2">
+                                        <div className="flex items-center gap-1 text-sm text-gray-400">
+                                          <button
+                                            onClick={() => onTimeClick(parseTimestamp(subChapter.timeStart))}
+                                            className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                          >
+                                            {subChapter.timeStart}
+                                          </button>
+                                          <span>-</span>
+                                          <button
+                                            onClick={() => onTimeClick(parseTimestamp(subChapter.timeEnd))}
+                                            className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                          >
+                                            {subChapter.timeEnd}
+                                          </button>
+                                        </div>
+                                        <h4 className="text-white font-medium">{subChapter.content}</h4>
+                                      </div>
+
+                                      {/* 子章节对应的字幕内容 */}
+                                      {subChapterSubtitles.length > 0 && (
+                                        <div className="bg-gray-800/50 rounded-lg p-3">
+                                          <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                                            <span>💬</span>
+                                            <span>字幕内容</span>
+                                          </div>
+                                          <div className="bg-gray-900/30 rounded-lg p-3">
+                                            {subChapterSubtitles.map((subtitle, subSubIndex) => {
+                                              const [isExpanded, setIsExpanded] = useState(false);
+                                              const lines = subtitle.content.split('\n');
+                                              const shouldShowExpand = lines.length > 3;
+
+                                              return (
+                                                <div 
+                                                  key={`subtitle-${index}-${subIndex}-${subSubIndex}`}
+                                                  className="group hover:bg-gray-700/30 p-2 rounded-lg transition-colors"
+                                                >
+                                                  {subtitle.speaker && (
+                                                    <span className="text-sm text-gray-400 mr-2">{subtitle.speaker}:</span>
+                                                  )}
+                                                  <span 
+                                                    className={`${!isExpanded && shouldShowExpand ? 'line-clamp-3' : ''} cursor-pointer hover:text-blue-300 text-gray-200 text-sm`}
+                                                    onClick={() => onTimeClick(subtitle.timestamp)}
+                                                  >
+                                                    {subtitle.content}
+                                                  </span>
+                                                  {shouldShowExpand && (
+                                                    <button
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setIsExpanded(!isExpanded);
+                                                      }}
+                                                      className="ml-2 text-blue-400 hover:text-blue-300 text-sm inline-flex items-center gap-1"
+                                                    >
+                                                      {isExpanded ? (
+                                                        <>
+                                                          <ChevronUpIcon className="w-4 h-4" />
+                                                          <span>收起</span>
+                                                        </>
+                                                      ) : (
+                                                        <>
+                                                          <ChevronDownIcon className="w-4 h-4" />
+                                                          <span>展开</span>
+                                                        </>
+                                                      )}
+                                                    </button>
+                                                  )}
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {/* 三级章节 */}
+                                      {subChapter.children && subChapter.children.length > 0 && (
+                                        <div className="pl-4 space-y-3">
+                                          {subChapter.children.map((subSubChapter: Chapter, subSubIndex: number) => {
+                                            // 获取三级章节时间范围内的字幕
+                                            const subSubChapterSubtitles = subtitles.filter(subtitle => {
+                                              const subtitleTime = parseTimestamp(subtitle.time);
+                                              const subSubChapterStart = subSubChapter.timeStart ? parseTimestamp(subSubChapter.timeStart) : subSubChapter.timestamp;
+                                              const subSubChapterEnd = subSubChapter.timeEnd ? parseTimestamp(subSubChapter.timeEnd) : subSubChapter.timestamp;
+                                              return subtitleTime >= subSubChapterStart && subtitleTime <= subSubChapterEnd;
+                                            });
+
+                                            return (
+                                              <div key={`subsub-${index}-${subIndex}-${subSubIndex}`} className="space-y-2">
+                                                <div className="flex items-start gap-2">
+                                                  <div className="flex items-center gap-1 text-sm text-gray-400">
+                                                    <button
+                                                      onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeStart))}
+                                                      className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                                    >
+                                                      {subSubChapter.timeStart}
+                                                    </button>
+                                                    <span>-</span>
+                                                    <button
+                                                      onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeEnd))}
+                                                      className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                                    >
+                                                      {subSubChapter.timeEnd}
+                                                    </button>
+                                                  </div>
+                                                  <h5 className="text-white font-medium text-sm">{subSubChapter.content}</h5>
+                                                </div>
+
+                                                {/* 三级章节对应的字幕内容 */}
+                                                {subSubChapterSubtitles.length > 0 && (
+                                                  <div className="bg-gray-800/50 rounded-lg p-2">
+                                                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-2">
+                                                      <span>💬</span>
+                                                      <span>字幕内容</span>
+                                                    </div>
+                                                    <div className="bg-gray-900/30 rounded-lg p-2">
+                                                      {subSubChapterSubtitles.map((subtitle, subSubSubIndex) => {
+                                                        const [isExpanded, setIsExpanded] = useState(false);
+                                                        const lines = subtitle.content.split('\n');
+                                                        const shouldShowExpand = lines.length > 3;
+
+                                                        return (
+                                                          <div 
+                                                            key={`subtitle-${index}-${subIndex}-${subSubIndex}-${subSubSubIndex}`}
+                                                            className="group hover:bg-gray-700/30 p-1.5 rounded-lg transition-colors"
+                                                          >
+                                                            {subtitle.speaker && (
+                                                              <span className="text-xs text-gray-400 mr-2">{subtitle.speaker}:</span>
+                                                            )}
+                                                            <span 
+                                                              className={`${!isExpanded && shouldShowExpand ? 'line-clamp-3' : ''} cursor-pointer hover:text-blue-300 text-gray-200 text-xs`}
+                                                              onClick={() => onTimeClick(subtitle.timestamp)}
+                                                            >
+                                                              {subtitle.content}
+                                                            </span>
+                                                            {shouldShowExpand && (
+                                                              <button
+                                                                onClick={(e) => {
+                                                                  e.stopPropagation();
+                                                                  setIsExpanded(!isExpanded);
+                                                                }}
+                                                                className="ml-2 text-blue-400 hover:text-blue-300 text-xs inline-flex items-center gap-1"
+                                                              >
+                                                                {isExpanded ? (
+                                                                  <>
+                                                                    <ChevronUpIcon className="w-3 h-3" />
+                                                                    <span>收起</span>
+                                                                  </>
+                                                                ) : (
+                                                                  <>
+                                                                    <ChevronDownIcon className="w-3 h-3" />
+                                                                    <span>展开</span>
+                                                                  </>
+                                                                )}
+                                                              </button>
+                                                            )}
+                                                          </div>
+                                                        );
+                                                      })}
+                                                    </div>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
-                
               </div>
             </ScrollArea>
           </div>
