@@ -384,49 +384,17 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
   }
 }
 
-
-
 // Helper function to parse subtitles from text
 function parseSubtitles(subtitlesText: string) {
-  console.log('开始解析字幕文本:', subtitlesText.substring(0, 500) + '...');
-  
   // 处理字幕格式：去掉第一行并清理格式
   let cleanedText = subtitlesText.trim();
   
   // 去除 "Active code page: 65001" 这样的第一行
   const lines = cleanedText.split(/\r?\n/);
-  let startIndex = 0;
-  
-  // 查找实际字幕内容的开始位置
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    
-    // 跳过以下类型的行：
-    // 1. Active code page 行
-    // 2. 格式标记行（如 "字幕", ":", "[{,…}]" 等）
-    if (line.includes('Active code page') ||
-        line === '字幕' || line === ':' || 
-        line.match(/^\[?\{.*\}?\]?$/) || 
-        line === '0' || line === 'text' ||
-        (line.match(/^[\d\s]*$/) && line.length < 3)) {
-      startIndex = i + 1;
-      continue;
-    }
-    
-    // 如果找到看起来像字幕序号的行（纯数字，通常是1、2、3...），开始解析
-    if (line.match(/^\d+$/)) {
-      startIndex = i;
-      break;
-    }
-  }
-  
-  cleanedText = lines.slice(startIndex).join('\n');
   
   // 清理转义字符
   cleanedText = cleanedText.replace(/\\r\\n/g, '\n');
   cleanedText = cleanedText.replace(/\\n/g, '\n');
-  
-  console.log('清理后的字幕文本前500字符:', cleanedText.substring(0, 500));
   
   // 解析标准 SRT 格式
   const subtitleBlocks = cleanedText.split(/\n\s*\n/).filter(block => block.trim());
@@ -453,16 +421,13 @@ function parseSubtitles(subtitlesText: string) {
       id: id,
       timestamp: parseTimestamp(timeMatch[1]),
       time: timeMatch[1].split(/[,\.]/)[0],
+      timeStart: timeMatch[1].split(/[,\.]/)[0],
+      timeEnd: timeMatch[2].split(/[,\.]/)[0],
       speaker: '',
       content: content,
     });
   }
 
-  console.log('解析出的字幕条目数量:', subtitles.length);
-  if (subtitles.length > 0) {
-    console.log('第一条字幕示例:', subtitles[0]);
-    console.log('最后一条字幕示例:', subtitles[subtitles.length - 1]);
-  }
   return subtitles;
 }
 
