@@ -14,19 +14,12 @@ import { Subtitle } from '@/services/api';
 import { Node, Edge } from 'reactflow';
 import { MermaidRenderer } from '@/components/MermaidRenderer';
 
+// 章节接口定义，支持多层级结构
 interface Chapter {
-  id: string;
-  time: string;
-  endTime?: string;
-  title: string;
+  timeStart: string;
+  timeEnd: string;
   content: string;
-  subChapters?: Array<{
-    id: string;
-    time: string;
-    endTime?: string;
-    title: string;
-    content: string;
-  }>;
+  children: Chapter[];
 }
 
 interface VideoContentProps {
@@ -46,8 +39,19 @@ interface VideoContentProps {
 
 // Helper function to parse timestamp to seconds
 function parseTimestamp(timestamp: string): number {
-  const [hours, minutes, seconds] = timestamp.split(':').map(Number);
-  return hours * 3600 + minutes * 60 + seconds;
+  const parts = timestamp.split(':').map(Number);
+  if (parts.length === 2) {
+    // MM:SS format
+    const [minutes, seconds] = parts;
+    return minutes * 60 + seconds;
+  } else if (parts.length === 3) {
+    // HH:MM:SS format
+    const [hours, minutes, seconds] = parts;
+    return hours * 3600 + minutes * 60 + seconds;
+  } else {
+    console.error('Invalid timestamp format:', timestamp);
+    return 0;
+  }
 }
 
 export function VideoContent({ 
@@ -294,64 +298,107 @@ export function VideoContent({
                       <span>章节内容</span>
                     </h2>
                     <div className="space-y-4">
-                      {chapters.map((chapter) => (
+                      {chapters.map((chapter, index) => (
                         <div 
-                          key={chapter.id}
+                          key={`chapter-${index}`}
                           className="bg-gray-700/50 rounded-lg p-6 space-y-3"
                         >
                           <div className="flex items-start gap-2">
                             <div className="flex items-center gap-1 text-sm text-gray-400">
                               <button
-                                onClick={() => onTimeClick(parseTimestamp(chapter.time))}
+                                onClick={() => onTimeClick(parseTimestamp(chapter.timeStart))}
                                 className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
                               >
-                                {chapter.time}
+                                {chapter.timeStart}
                               </button>
-                              {chapter.endTime && (
-                                <>
-                                  <span>-</span>
-                                  <button
-                                    onClick={() => onTimeClick(parseTimestamp(chapter.endTime as string))}
-                                    className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                  >
-                                    {chapter.endTime}
-                                  </button>
-                                </>
-                              )}
+                              <span>-</span>
+                              <button
+                                onClick={() => onTimeClick(parseTimestamp(chapter.timeEnd))}
+                                className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                              >
+                                {chapter.timeEnd}
+                              </button>
                             </div>
-                            <h3 className="text-white font-medium text-lg">{chapter.title}</h3>
+                            <h3 className="text-white font-medium text-lg">{chapter.content}</h3>
                           </div>
                           
                           {/* 子章节列表 */}
-                          {chapter.subChapters && chapter.subChapters.length > 0 && (
+                          {chapter.children && chapter.children.length > 0 && (
                             <div className="pl-4 space-y-3">
-                              {chapter.subChapters.map((subChapter) => (
-                                <div key={subChapter.id} className="space-y-2">
+                              {chapter.children.map((subChapter: Chapter, subIndex: number) => (
+                                <div key={`sub-${index}-${subIndex}`} className="space-y-2">
                                   <div className="flex items-start gap-2">
                                     <div className="flex items-center gap-1 text-sm text-gray-400">
                                       <button
-                                        onClick={() => onTimeClick(parseTimestamp(subChapter.time))}
+                                        onClick={() => onTimeClick(parseTimestamp(subChapter.timeStart))}
                                         className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
                                       >
-                                        {subChapter.time}
+                                        {subChapter.timeStart}
                                       </button>
-                                      {subChapter.endTime && (
-                                        <>
-                                          <span>-</span>
-                                          <button
-                                            onClick={() => onTimeClick(parseTimestamp(subChapter.endTime as string))}
-                                            className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                                          >
-                                            {subChapter.endTime}
-                                          </button>
-                                        </>
-                                      )}
+                                      <span>-</span>
+                                      <button
+                                        onClick={() => onTimeClick(parseTimestamp(subChapter.timeEnd))}
+                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                      >
+                                        {subChapter.timeEnd}
+                                      </button>
                                     </div>
-                                    <h4 className="text-white font-medium">{subChapter.title}</h4>
+                                    <h4 className="text-white font-medium">{subChapter.content}</h4>
                                   </div>
-                                  {subChapter.content && (
-                                    <div className="text-gray-300 text-base leading-relaxed whitespace-pre-line pl-4">
-                                      {subChapter.content}
+                                  
+                                  {/* 三级章节 */}
+                                  {subChapter.children && subChapter.children.length > 0 && (
+                                    <div className="pl-4 space-y-2">
+                                      {subChapter.children.map((subSubChapter: Chapter, subSubIndex: number) => (
+                                        <div key={`subsub-${index}-${subIndex}-${subSubIndex}`} className="space-y-1">
+                                          <div className="flex items-start gap-2">
+                                            <div className="flex items-center gap-1 text-sm text-gray-400">
+                                              <button
+                                                onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeStart))}
+                                                className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                              >
+                                                {subSubChapter.timeStart}
+                                              </button>
+                                              <span>-</span>
+                                              <button
+                                                onClick={() => onTimeClick(parseTimestamp(subSubChapter.timeEnd))}
+                                                className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                              >
+                                                {subSubChapter.timeEnd}
+                                              </button>
+                                            </div>
+                                            <h5 className="text-white font-medium text-sm">{subSubChapter.content}</h5>
+                                          </div>
+                                          
+                                          {/* 四级章节 */}
+                                          {subSubChapter.children && subSubChapter.children.length > 0 && (
+                                            <div className="pl-4 space-y-1">
+                                              {subSubChapter.children.map((subSubSubChapter: Chapter, subSubSubIndex: number) => (
+                                                <div key={`subsubsub-${index}-${subIndex}-${subSubIndex}-${subSubSubIndex}`} className="space-y-1">
+                                                  <div className="flex items-start gap-2">
+                                                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                                                      <button
+                                                        onClick={() => onTimeClick(parseTimestamp(subSubSubChapter.timeStart))}
+                                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                                      >
+                                                        {subSubSubChapter.timeStart}
+                                                      </button>
+                                                      <span>-</span>
+                                                      <button
+                                                        onClick={() => onTimeClick(parseTimestamp(subSubSubChapter.timeEnd))}
+                                                        className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+                                                      >
+                                                        {subSubSubChapter.timeEnd}
+                                                      </button>
+                                                    </div>
+                                                    <h6 className="text-white font-medium text-xs">{subSubSubChapter.content}</h6>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
@@ -359,12 +406,7 @@ export function VideoContent({
                             </div>
                           )}
 
-                          {/* 主章节内容 */}
-                          {chapter.content && (
-                            <div className="text-gray-300 text-base leading-relaxed whitespace-pre-line pl-4">
-                              {chapter.content}
-                            </div>
-                          )}
+
                         </div>
                       ))}
                     </div>
@@ -643,34 +685,48 @@ export function VideoContent({
           <div className="h-full bg-gray-800 rounded-lg p-4 sm:p-6">
             <ScrollArea className="h-full">
               <article className="prose prose-invert prose-sm sm:prose max-w-none">
-                <h1 className="text-xl sm:text-2xl mb-8">{highlights[0]?.title}</h1>
+                <h1 className="text-xl sm:text-2xl mb-8">字幕内容</h1>
                 
-                {/* 正文内容 */}
-                <div className="space-y-8">
-                  {getMergedSubtitles().map((paragraph, index) => {
-                    const content = paragraph.content.join(' ');
-                    const topic = generateTopic(content);
-                    
-                    return (
-                      <div key={index} className="space-y-3">
-                        <h3 className="text-gray-400 text-sm font-medium">
-                          📌 {topic}
-                        </h3>
-                        <p className="text-gray-200">
-                          {paragraph.content.map((sentence, sentenceIndex) => (
+                {/* 字幕内容 */}
+                {subtitles.length > 0 ? (
+                  <div className="space-y-4">
+                    {getMergedSubtitles().map((paragraph, index) => {
+                      const content = paragraph.content.join(' ');
+                      const topic = generateTopic(content);
+                      
+                      return (
+                        <div key={index} className="space-y-3 p-4 bg-gray-700/30 rounded-lg">
+                          <div className="flex items-center gap-3">
                             <button
-                              key={sentenceIndex}
                               onClick={() => onTimeClick(paragraph.startTime)}
-                              className="inline hover:text-blue-400 hover:underline cursor-pointer"
+                              className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer text-sm font-mono"
                             >
-                              {sentence}{' '}
+                              ⏰ {paragraph.time}
                             </button>
-                          ))}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
+                            <h3 className="text-gray-400 text-sm font-medium">
+                              📌 {topic}
+                            </h3>
+                          </div>
+                          <p className="text-gray-200 leading-relaxed">
+                            {paragraph.content.map((sentence, sentenceIndex) => (
+                              <button
+                                key={sentenceIndex}
+                                onClick={() => onTimeClick(paragraph.startTime)}
+                                className="inline hover:text-blue-400 hover:underline cursor-pointer transition-colors duration-200"
+                              >
+                                {sentence}{' '}
+                              </button>
+                            ))}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-400 text-lg">暂无字幕内容</p>
+                  </div>
+                )}
               </article>
             </ScrollArea>
           </div>

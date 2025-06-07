@@ -5,10 +5,10 @@ import DPlayer from 'dplayer';
 import 'dplayer/dist/DPlayer.min.css';
 
 interface Chapter {
-  id: string;
-  time: string;
-  title: string;
+  timeStart: string;
+  timeEnd: string;
   content: string;
+  children: Chapter[];
 }
 
 interface BilibiliPlayerProps {
@@ -134,30 +134,27 @@ export const BilibiliPlayer = forwardRef<BilibiliPlayerHandle, BilibiliPlayerPro
             <div className="p-4">
               <h3 className="text-white font-medium mb-4">章节列表</h3>
               <div className="space-y-2">
-                {chapters.map((chapter) => (
+                {chapters.map((chapter, index) => (
                   <button
-                    key={chapter.id}
-                    onClick={() => handleChapterClick(chapter.time)}
+                    key={`chapter-${index}`}
+                    onClick={() => handleChapterClick(chapter.timeStart)}
                     className={`w-full text-left p-2 rounded transition-colors group
-                      ${currentChapter === chapter.time 
+                      ${currentChapter === chapter.timeStart 
                         ? 'bg-gray-700 text-white' 
                         : 'hover:bg-gray-700'}`}
                   >
                     <div className="flex items-center justify-between text-sm">
-                      <span className={`${currentChapter === chapter.time 
+                      <span className={`${currentChapter === chapter.timeStart 
                         ? 'text-white' 
                         : 'text-gray-300 group-hover:text-white'}`}>
-                        {chapter.title}
+                        {chapter.content}
                       </span>
-                      <span className={`${currentChapter === chapter.time
+                      <span className={`${currentChapter === chapter.timeStart
                         ? 'text-gray-300'
                         : 'text-gray-400 group-hover:text-gray-300'}`}>
-                        {chapter.time}
+                        {chapter.timeStart}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">
-                      {chapter.content}
-                    </p>
                   </button>
                 ))}
               </div>

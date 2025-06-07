@@ -192,34 +192,74 @@ export default function VideoDetailPage() {
                 <div className="flex-1 min-h-0 px-4 pb-4">
                   <ScrollArea className="h-full">
                     <div className="space-y-3">
-                      {videoDetail.chapters.map((chapter) => (
-                        <React.Fragment key={chapter.id}>
-                          <Tooltip content={chapter.title}>
+                      {videoDetail.chapters.map((chapter, index) => (
+                        <React.Fragment key={`chapter-${index}`}>
+                          <Tooltip content={chapter.content}>
                             <div
                               className="w-full text-left px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors duration-200"
-                              onClick={() => handleChapterClick(chapter.time)}
+                              onClick={() => handleChapterClick(chapter.timeStart)}
                             >
                               <div className="flex items-center gap-3">
-                                <span className="text-xs text-gray-500 font-mono tabular-nums">{chapter.time}</span>
-                                <span className="flex-1 truncate">{chapter.title}</span>
+                                <span className="text-xs text-gray-500 font-mono tabular-nums">{chapter.timeStart}</span>
+                                <span className="flex-1 truncate">{chapter.content}</span>
                               </div>
                             </div>
                           </Tooltip>
                           {/* 子章节显示 */}
-                          {chapter.subChapters && chapter.subChapters.length > 0 && (
+                          {chapter.children && chapter.children.length > 0 && (
                             <div className="pl-6 space-y-2">
-                              {chapter.subChapters.map((sub) => (
-                                <Tooltip key={sub.id} content={sub.title}>
-                                  <div
-                                    className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors duration-200"
-                                    onClick={() => handleChapterClick(sub.time)}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs text-gray-500 font-mono tabular-nums">{sub.time}</span>
-                                      <span className="flex-1 truncate">{sub.title}</span>
+                              {chapter.children.map((sub, subIndex) => (
+                                <React.Fragment key={`sub-${index}-${subIndex}`}>
+                                  <Tooltip content={sub.content}>
+                                    <div
+                                      className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors duration-200"
+                                      onClick={() => handleChapterClick(sub.timeStart)}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 font-mono tabular-nums">{sub.timeStart}</span>
+                                        <span className="flex-1 truncate">{sub.content}</span>
+                                      </div>
                                     </div>
-                                  </div>
-                                </Tooltip>
+                                  </Tooltip>
+                                  {/* 三级章节显示 */}
+                                  {sub.children && sub.children.length > 0 && (
+                                    <div className="pl-4 space-y-1">
+                                      {sub.children.map((subSub, subSubIndex) => (
+                                        <React.Fragment key={`subsub-${index}-${subIndex}-${subSubIndex}`}>
+                                          <Tooltip content={subSub.content}>
+                                            <div
+                                              className="w-full text-left px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-700 rounded cursor-pointer transition-colors duration-200"
+                                              onClick={() => handleChapterClick(subSub.timeStart)}
+                                            >
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-xs text-gray-600 font-mono tabular-nums">{subSub.timeStart}</span>
+                                                <span className="flex-1 truncate">{subSub.content}</span>
+                                              </div>
+                                            </div>
+                                          </Tooltip>
+                                          {/* 四级章节显示 */}
+                                          {subSub.children && subSub.children.length > 0 && (
+                                            <div className="pl-3 space-y-1">
+                                              {subSub.children.map((subSubSub, subSubSubIndex) => (
+                                                <Tooltip key={`subsubsub-${index}-${subIndex}-${subSubIndex}-${subSubSubIndex}`} content={subSubSub.content}>
+                                                  <div
+                                                    className="w-full text-left px-2 py-1 text-xs text-gray-600 hover:bg-gray-700 rounded cursor-pointer transition-colors duration-200"
+                                                    onClick={() => handleChapterClick(subSubSub.timeStart)}
+                                                  >
+                                                    <div className="flex items-center gap-1">
+                                                      <span className="text-xs text-gray-600 font-mono tabular-nums">{subSubSub.timeStart}</span>
+                                                      <span className="flex-1 truncate text-xs">{subSubSub.content}</span>
+                                                    </div>
+                                                  </div>
+                                                </Tooltip>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </React.Fragment>
+                                      ))}
+                                    </div>
+                                  )}
+                                </React.Fragment>
                               ))}
                             </div>
                           )}

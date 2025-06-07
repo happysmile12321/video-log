@@ -66,22 +66,17 @@ export interface Video {
   summary: string;
 }
 
+// 章节接口定义，支持多层级结构
+interface Chapter {
+  timeStart: string;
+  timeEnd: string;
+  content: string;
+  children: Chapter[];
+}
+
 export interface VideoDetail extends Video {
   videoUrl: string;
-  chapters: {
-    id: string;
-    time: string;
-    endTime?: string;
-    title: string;
-    content: string;
-    subChapters?: {
-      id: string;
-      time: string;
-      endTime: string;
-      title: string;
-      content: string;
-    }[];
-  }[];
+  chapters: Chapter[];
   subtitles: Subtitle[];
   highlights: {
     title: string;
@@ -299,10 +294,23 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
     }
 
     // Parse chapters from 章节列表提取
-    const chaptersText = fields['章节列表提取']?.[0]?.text || '';
-    console.log('原始章节列表文本:', chaptersText);
-    const chapters = parseChapters(chaptersText);
-    console.log('解析后的章节列表数据:', JSON.stringify(chapters, null, 2));
+    const chaptersTextArray = fields['章节列表提取'] || [];
+    console.log('原始章节列表数组:', chaptersTextArray);
+    
+    // 拼接所有text片段成完整JSON字符串
+    const chaptersTextString = chaptersTextArray.map(item => item.text).join('');
+    console.log('拼接后的章节列表文本:', chaptersTextString);
+    
+    let chapters = [];
+    try {
+      const chaptersData = JSON.parse(chaptersTextString);
+      console.log('解析后的章节列表数据:', chaptersData);
+      chapters = Array.isArray(chaptersData) ? chaptersData : [chaptersData];
+         } catch (error) {
+       console.error('解析章节列表JSON失败:', error);
+       chapters = [];
+     }
+     console.log('最终章节列表数据:', JSON.stringify(chapters, null, 2));
 
     // Parse chapter content from 章节内容
     const chapterContentText = fields['章节内容']?.[0]?.text || '';
@@ -311,8 +319,14 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
     // 不再合并章节内容到章节列表
 
     // Parse subtitles
-    const subtitlesText = fields['字幕']?.[0]?.text || '';
-    const subtitles = parseSubtitles(subtitlesText);
+    const subtitlesTextArray = fields['字幕'] || [];
+    console.log('原始字幕数组:', subtitlesTextArray);
+    
+    // 拼接所有text片段成完整字符串
+    const subtitlesTextString = subtitlesTextArray.map(item => item.text).join('');
+    console.log('拼接后的字幕文本:', subtitlesTextString);
+    
+    const subtitles = parseSubtitles(subtitlesTextString);
     console.log('解析后的字幕数据:', JSON.stringify(subtitles, null, 2));
 
     // Parse mindmap content from 思维导图提取内容
@@ -370,60 +384,52 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
   }
 }
 
-// Helper function to parse chapters from text
-function parseChapters(chaptersText: string) {
-  console.log('开始解析章节列表文本:', chaptersText);
-  
-  const lines = chaptersText.split('\n');
-  const chapters = [];
-  let chapterCounter = 1;
-  let currentChapter = null;
 
-  for (const line of lines) {
-    const trimmedLine = line.trim();
-    if (!trimmedLine) continue;
-
-    // 主章节：数字. 标题 (可选时间)
-    const mainChapterMatch = trimmedLine.match(/^(\d+)\.\s+(.+?)(?:\s*\((\d{2}:\d{2}:\d{2})~(\d{2}:\d{2}:\d{2})\))?$/);
-    // 子章节：- 标题 (时间)
-    const subChapterMatch = trimmedLine.match(/^\s*-\s+(.+?)\s*\((\d{2}:\d{2}:\d{2})~(\d{2}:\d{2}:\d{2})\)$/);
-
-    if (mainChapterMatch) {
-      // 保存上一个章节
-      if (currentChapter) chapters.push(currentChapter);
-      currentChapter = {
-        id: `chapter-${chapterCounter++}`,
-        time: mainChapterMatch[3] || '',
-        endTime: mainChapterMatch[4] || '',
-        title: mainChapterMatch[2].trim(),
-        content: '',
-        subChapters: []
-      };
-      console.log('解析到新主章节:', currentChapter);
-    } else if (subChapterMatch && currentChapter) {
-      // 子章节归属当前主章节
-      const sub = {
-        id: `subchapter-${chapterCounter++}`,
-        time: subChapterMatch[2],
-        endTime: subChapterMatch[3],
-        title: subChapterMatch[1].trim(),
-        content: ''
-      };
-      currentChapter.subChapters.push(sub);
-      console.log('解析到新子章节:', sub);
-    } else if (currentChapter) {
-      // 其他内容归为主章节内容
-      currentChapter.content += (currentChapter.content ? '\n' : '') + trimmedLine;
-    }
-  }
-  if (currentChapter) chapters.push(currentChapter);
-  console.log('最终解析的章节列表:', chapters);
-  return chapters;
-}
 
 // Helper function to parse subtitles from text
 function parseSubtitles(subtitlesText: string) {
-  const lines = subtitlesText.split('\n');
+  console.log('开始解析字幕文本:', subtitlesText.substring(0, 500) + '...');
+  
+  // 处理用户描述的格式：去掉第一行并清理格式
+  let cleanedText = subtitlesText.trim();
+  
+  // 如果文本包含类似 "字幕\n:\n[{,…}]" 这样的格式，需要进行清理
+  if (cleanedText.includes('字幕') || cleanedText.includes('text')) {
+    const lines = cleanedText.split(/\r?\n/);
+    let startIndex = 0;
+    
+    // 查找实际字幕内容的开始位置
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // 跳过包含格式标记的行
+      if (line === '字幕' || line === ':' || 
+          line.match(/^\[?\{.*\}?\]?$/) || 
+          line === '0' || line === 'text' || 
+          line.match(/^[\d\s]*$/) ||
+          line.includes('Active code page')) {
+        startIndex = i + 1;
+        continue;
+      }
+      
+      // 如果找到看起来像字幕序号的行，开始解析
+      if (line.match(/^\d+$/)) {
+        startIndex = i;
+        break;
+      }
+    }
+    
+    cleanedText = lines.slice(startIndex).join('\n');
+  }
+  
+  // 去除不必要的前缀
+  cleanedText = cleanedText.replace(/^Active code page: \d+\\?r?\\?n/, '');
+  cleanedText = cleanedText.replace(/\\r\\n/g, '\n');
+  cleanedText = cleanedText.replace(/\\n/g, '\n');
+  
+  console.log('清理后的字幕文本前500字符:', cleanedText.substring(0, 500));
+  
+  const lines = cleanedText.split(/\r?\n/);
   const subtitles = [];
   let currentSubtitle = null;
 
@@ -432,7 +438,7 @@ function parseSubtitles(subtitlesText: string) {
     if (!trimmedLine) continue;
 
     // Match subtitle pattern like "1 00:00:00,000 --> 00:00:11,680"
-    const timeMatch = trimmedLine.match(/^(\d+)\s+(\d{2}:\d{2}:\d{2},\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2},\d{3})/);
+    const timeMatch = trimmedLine.match(/^(\d+)\s+(\d{2}:\d{2}:\d{2}[,\.]\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2}[,\.]\d{3})/);
     if (timeMatch) {
       if (currentSubtitle) {
         subtitles.push(currentSubtitle);
@@ -440,10 +446,16 @@ function parseSubtitles(subtitlesText: string) {
       currentSubtitle = {
         id: timeMatch[1],
         timestamp: parseTimestamp(timeMatch[2]),
-        time: timeMatch[2].split(',')[0],
+        time: timeMatch[2].split(/[,\.]/)[0],
         speaker: '',
         content: '',
       };
+    } else if (trimmedLine.match(/^\d+$/)) {
+      // 如果是纯数字行，可能是字幕序号，准备下一个字幕
+      if (currentSubtitle) {
+        subtitles.push(currentSubtitle);
+        currentSubtitle = null;
+      }
     } else if (currentSubtitle) {
       if (!currentSubtitle.content) {
         currentSubtitle.content = trimmedLine;
@@ -457,12 +469,16 @@ function parseSubtitles(subtitlesText: string) {
     subtitles.push(currentSubtitle);
   }
 
+  console.log('解析出的字幕条目数量:', subtitles.length);
+  if (subtitles.length > 0) {
+    console.log('第一条字幕示例:', subtitles[0]);
+  }
   return subtitles;
 }
 
 // Helper function to parse timestamp to seconds
 function parseTimestamp(timestamp: string) {
-  const [time, milliseconds] = timestamp.split(',');
+  const [time, milliseconds] = timestamp.split(/[,\.]/);
   const [hours, minutes, seconds] = time.split(':').map(Number);
-  return hours * 3600 + minutes * 60 + seconds + Number(milliseconds) / 1000;
+  return hours * 3600 + minutes * 60 + seconds + Number(milliseconds || 0) / 1000;
 } 
