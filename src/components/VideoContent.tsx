@@ -14,6 +14,11 @@ import { MindMap } from '@/components/MindMap';
 import { Node, Edge } from 'reactflow';
 import { MermaidRenderer } from '@/components/MermaidRenderer';
 import { Element, scroller, Element as ScrollElement } from 'react-scroll';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
+import type { Components } from 'react-markdown';
 
 interface Subtitle {
   id: string;
@@ -751,60 +756,57 @@ export function VideoContent({
                       <span>章节内容</span>
                     </h2>
                     <div className="bg-gray-700/50 rounded-lg p-6">
-                      <div className="text-gray-200 text-base leading-relaxed whitespace-pre-line">
-                        {chapterContent.split(/\n/).map((line, idx) => {
-                          // 匹配 ⏰00:00-01:00 或 ⏰00:00
-                          const timeRegex = /⏰(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?/g;
-                          let lastIndex = 0;
-                          const parts: React.ReactNode[] = [];
-                          let match;
-                          while ((match = timeRegex.exec(line)) !== null) {
-                            // 添加前面的文本
-                            if (match.index > lastIndex) {
-                              parts.push(line.slice(lastIndex, match.index));
-                            }
-                            // 起始时间
-                            const start = match[1];
-                            // 结束时间
-                            const end = match[2];
-                            // 转换为秒
-                            const toSeconds = (t: string) => {
-                              const [m, s] = t.split(':').map(Number);
-                              return m * 60 + s;
-                            };
-                            // 渲染起始时间按钮
-                            parts.push(
-                              <button
-                                key={`start-${idx}-${match.index}`}
-                                onClick={() => onTimeClick(toSeconds(start))}
-                                className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer mx-1"
-                              >
-                                ⏰{start}
-                              </button>
-                            );
-                            // 如果有结束时间，渲染结束时间按钮
-                            if (end) {
-                              parts.push(
-                                <>
-                                  <span>-</span>
-                                  <button
-                                    key={`end-${idx}-${match.index}`}
-                                    onClick={() => onTimeClick(toSeconds(end))}
-                                    className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer mx-1"
-                                  >
-                                    {end}
-                                  </button>
-                                </>
+                      <div className="prose prose-invert max-w-none">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                          components={{
+                            // 自定义链接渲染
+                            a: (props: any) => (
+                              <a
+                                {...props}
+                                className="text-blue-400 hover:text-blue-300 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              />
+                            ),
+                            // 自定义代码块渲染
+                            code: (props: any) => {
+                              const { inline, className, children } = props;
+                              const match = /language-(\w+)/.exec(className || '');
+                              return !inline && match ? (
+                                <div className="relative">
+                                  <div className="absolute top-2 right-2 text-xs text-gray-400">
+                                    {match[1]}
+                                  </div>
+                                  <pre className="bg-gray-900/50 rounded-lg p-4 overflow-x-auto">
+                                    <code className={className} {...props}>
+                                      {children}
+                                    </code>
+                                  </pre>
+                                </div>
+                              ) : (
+                                <code className="bg-gray-900/50 rounded px-1.5 py-0.5 text-sm" {...props}>
+                                  {children}
+                                </code>
                               );
-                            }
-                            lastIndex = match.index + match[0].length;
-                          }
-                          // 添加剩余文本
-                          if (lastIndex < line.length) {
-                            parts.push(line.slice(lastIndex));
-                          }
-                          return <div key={idx}>{parts}</div>;
-                        })}
+                            },
+                            // 自定义表格渲染
+                            table: (props: any) => (
+                              <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-700" {...props} />
+                              </div>
+                            ),
+                            th: (props: any) => (
+                              <th className="px-4 py-2 text-left text-sm font-medium text-gray-300 bg-gray-800/50" {...props} />
+                            ),
+                            td: (props: any) => (
+                              <td className="px-4 py-2 text-sm text-gray-300 border-t border-gray-700" {...props} />
+                            ),
+                          }}
+                        >
+                          {chapterContent}
+                        </ReactMarkdown>
                       </div>
                     </div>
                   </div>
@@ -824,7 +826,14 @@ export function VideoContent({
                           className="bg-gray-700/50 rounded-lg p-6 space-y-3"
                         >
                           <h3 className="text-white font-medium text-lg">{highlight.title}</h3>
-                          <p className="text-gray-300 text-base leading-relaxed whitespace-pre-line">{highlight.content}</p>
+                          <div className="prose prose-invert max-w-none">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                            >
+                              {highlight.content}
+                            </ReactMarkdown>
+                          </div>
                           {highlight.tags.length > 0 && (
                             <div className="flex flex-wrap gap-2 pt-2">
                               {highlight.tags.map(tag => (
@@ -858,7 +867,14 @@ export function VideoContent({
                             className="flex items-start text-gray-200"
                           >
                             <span className="mr-3 text-blue-400 text-lg">•</span>
-                            <span className="text-base leading-relaxed whitespace-pre-line">{thought}</span>
+                            <div className="prose prose-invert max-w-none">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                              >
+                                {thought}
+                              </ReactMarkdown>
+                            </div>
                           </li>
                         ))}
                       </ul>
