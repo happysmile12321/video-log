@@ -270,7 +270,6 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
       body: JSON.stringify({ recordId: id }),
     });
 
-    console.log('原始 API 响应:', JSON.stringify(response, null, 2));
 
     // 检查响应是否有效
     if (!Array.isArray(response) || response.length === 0) {
@@ -285,7 +284,6 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
     }
 
     const fields = record.fields;
-    console.log('处理后的字段数据:', JSON.stringify(fields, null, 2));
     
     // 检查必要字段是否存在
     if (!fields['标题']?.[0]?.text || !record.record_id) {
@@ -295,43 +293,46 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
 
     // Parse chapters from 章节列表提取
     const chaptersTextArray = fields['章节列表提取'] || [];
-    console.log('原始章节列表数组:', chaptersTextArray);
-    
     // 拼接所有text片段成完整JSON字符串
-    const chaptersTextString = chaptersTextArray.map(item => item.text).join('');
-    console.log('拼接后的章节列表文本:', chaptersTextString);
+    const chaptersTextString = chaptersTextArray.map(item => {
+      item.text = item.text.replace(/\d\,/g, '0.');
+      return item.text;
+    }).join('');
     
     let chapters = [];
     try {
       const chaptersData = JSON.parse(chaptersTextString);
-      console.log('解析后的章节列表数据:', chaptersData);
       chapters = Array.isArray(chaptersData) ? chaptersData : [chaptersData];
+      if(chapters.length==1){
+        chapters = chapters[0].children;
+      }  
+      console.log('章节列表提取',chapters); 
          } catch (error) {
        console.error('解析章节列表JSON失败:', error);
        chapters = [];
      }
-     console.log('最终章节列表数据:', JSON.stringify(chapters, null, 2));
 
     // Parse chapter content from 章节内容
     const chapterContentText = fields['章节内容']?.[0]?.text || '';
-    console.log('原始章节内容文本:', chapterContentText);
     const chapterContent = chapterContentText; // 直接作为原文传递
     // 不再合并章节内容到章节列表
 
     // Parse subtitles
-    const subtitlesTextArray = fields['字幕'] || [];
-    console.log('原始字幕数组:', subtitlesTextArray);
-    
+    //@ts-expect-error
+    let subtitlesTextArray = fields['字幕'].value || [];
+    // console.log('原始字幕数组:', subtitlesTextArray);
+    subtitlesTextArray[0].text = subtitlesTextArray[0].text.replace(/\,/g, '.');
+
     // 拼接所有text片段成完整字符串
-    const subtitlesTextString = subtitlesTextArray.map(item => item.text).join('');
-    console.log('拼接后的字幕文本:', subtitlesTextString);
+    const subtitlesTextString = subtitlesTextArray.map((item:any) => item.text).join('');
+  
+    // console.log('拼接后的字幕文本:', subtitlesTextString);
     
     const subtitles = parseSubtitles(subtitlesTextString);
-    console.log('解析后的字幕数据:', JSON.stringify(subtitles, null, 2));
+    // console.log('解析后的字幕数据:', JSON.stringify(subtitles, null, 2));
 
     // Parse mindmap content from 思维导图提取内容
     const mindmapContentText = fields['思维导图提取内容']?.[0]?.text || '';
-    console.log('原始思维导图文本:', mindmapContentText);
 
     // 处理时间戳
     const timestamp = fields['时间'];
@@ -375,7 +376,6 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
       mindmapContent: mindmapContentText,
     };
 
-    console.log('最终处理后的视频详情数据:', JSON.stringify(videoDetail, null, 2));
 
     return videoDetail;
   } catch (error) {

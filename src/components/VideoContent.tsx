@@ -452,7 +452,7 @@ export function VideoContent({
   // 渲染章节列表
   const renderChapterList = () => {
     const activeChapterInfo = findActiveChapter(chapters, currentTime);
-
+    console.log('activeChapterInfo',activeChapterInfo);
     // 处理第一层章节，添加旁白
     const processedChapters = chapters.reduce<Array<{
       type: 'chapter' | 'narration';
@@ -748,69 +748,7 @@ export function VideoContent({
                   </div>
                 </div>
 
-                {/* 章节内容（章节内容原文，格式化显示） */}
-                {chapterContent && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                      <span>📑</span>
-                      <span>章节内容</span>
-                    </h2>
-                    <div className="bg-gray-700/50 rounded-lg p-6">
-                      <div className="prose prose-invert max-w-none">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          rehypePlugins={[rehypeRaw, rehypeSanitize]}
-                          components={{
-                            // 自定义链接渲染
-                            a: (props: any) => (
-                              <a
-                                {...props}
-                                className="text-blue-400 hover:text-blue-300 hover:underline"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              />
-                            ),
-                            // 自定义代码块渲染
-                            code: (props: any) => {
-                              const { inline, className, children } = props;
-                              const match = /language-(\w+)/.exec(className || '');
-                              return !inline && match ? (
-                                <div className="relative">
-                                  <div className="absolute top-2 right-2 text-xs text-gray-400">
-                                    {match[1]}
-                                  </div>
-                                  <pre className="bg-gray-900/50 rounded-lg p-4 overflow-x-auto">
-                                    <code className={className} {...props}>
-                                      {children}
-                                    </code>
-                                  </pre>
-                                </div>
-                              ) : (
-                                <code className="bg-gray-900/50 rounded px-1.5 py-0.5 text-sm" {...props}>
-                                  {children}
-                                </code>
-                              );
-                            },
-                            // 自定义表格渲染
-                            table: (props: any) => (
-                              <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-700" {...props} />
-                              </div>
-                            ),
-                            th: (props: any) => (
-                              <th className="px-4 py-2 text-left text-sm font-medium text-gray-300 bg-gray-800/50" {...props} />
-                            ),
-                            td: (props: any) => (
-                              <td className="px-4 py-2 text-sm text-gray-300 border-t border-gray-700" {...props} />
-                            ),
-                          }}
-                        >
-                          {chapterContent}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
-                  </div>
-                )}
+              
 
                 {/* 亮点部分 */}
                 {highlights.length > 1 && (
