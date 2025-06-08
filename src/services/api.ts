@@ -320,13 +320,13 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
     // Parse subtitles
     //@ts-expect-error
     let subtitlesTextArray = fields['字幕'].value || [];
-    // console.log('原始字幕数组:', subtitlesTextArray);
+    console.log('原始字幕数组:', subtitlesTextArray);
     subtitlesTextArray[0].text = subtitlesTextArray[0].text.replace(/\,/g, '.');
 
     // 拼接所有text片段成完整字符串
     const subtitlesTextString = subtitlesTextArray.map((item:any) => item.text).join('');
   
-    // console.log('拼接后的字幕文本:', subtitlesTextString);
+    console.log('拼接后的字幕文本:', subtitlesTextString);
     
     const subtitles = parseSubtitles(subtitlesTextString);
     // console.log('解析后的字幕数据:', JSON.stringify(subtitles, null, 2));
@@ -386,39 +386,47 @@ export async function getVideoDetail(id: string): Promise<VideoDetail | null> {
 
 // Helper function to parse subtitles from text
 function parseSubtitles(subtitlesText: string) {
-  // 处理字幕格式：去掉第一行并清理格式
+  // 处理字幕格式：清理格式
   let cleanedText = subtitlesText.trim();
-  
-  // 去除 "Active code page: 65001" 这样的第一行
-  const lines = cleanedText.split(/\r?\n/);
   
   // 清理转义字符
   cleanedText = cleanedText.replace(/\\r\\n/g, '\n');
   cleanedText = cleanedText.replace(/\\n/g, '\n');
   
-  // 解析标准 SRT 格式
+  // 解析字幕块
   const subtitleBlocks = cleanedText.split(/\n\s*\n/).filter(block => block.trim());
   const subtitles = [];
 
   for (const block of subtitleBlocks) {
     const blockLines = block.trim().split(/\r?\n/);
-    if (blockLines.length < 3) continue; // 至少需要3行：序号、时间、内容
+    if (blockLines.length < 2) continue; // 至少需要2行：时间、内容
     
-    // 第一行：序号
-    const id = blockLines[0].trim();
-    if (!id.match(/^\d+$/)) continue; // 必须是纯数字
+    let timeLineIndex = 0;
+    let contentStartIndex = 1;
     
-    // 第二行：时间戳
-    const timeLine = blockLines[1].trim();
+    // 检查第一行是否为序号
+    const firstLine = blockLines[0].trim();
+    if (!firstLine.match(/^\d+$/)) {
+      // 如果不是序号，则第一行就是时间行
+      timeLineIndex = 0;
+      contentStartIndex = 1;
+    } else {
+      // 如果是序号，则第二行是时间行
+      timeLineIndex = 1;
+      contentStartIndex = 2;
+    }
+    
+    // 检查时间行格式
+    const timeLine = blockLines[timeLineIndex].trim();
     const timeMatch = timeLine.match(/^(\d{2}:\d{2}:\d{2}[,\.]\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2}[,\.]\d{3})/);
     if (!timeMatch) continue; // 必须有正确的时间格式
     
-    // 第三行及之后：字幕内容
-    const content = blockLines.slice(2).join('\n').trim();
+    // 获取内容
+    const content = blockLines.slice(contentStartIndex).join('\n').trim();
     if (!content) continue; // 必须有内容
     
     subtitles.push({
-      id: id,
+      id: firstLine.match(/^\d+$/) ? firstLine : String(subtitles.length + 1),
       timestamp: parseTimestamp(timeMatch[1]),
       time: timeMatch[1].split(/[,\.]/)[0],
       timeStart: timeMatch[1].split(/[,\.]/)[0],

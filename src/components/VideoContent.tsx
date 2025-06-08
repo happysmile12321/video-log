@@ -129,7 +129,7 @@ export function VideoContent({
   // 获取折叠状态
   const isCollapsed = (id: string) => collapsedItems.has(id);
 
-  console.log(subtitles);
+  console.log('subtitles', subtitles);
 
 
   // Helper function to merge subtitles into paragraphs
