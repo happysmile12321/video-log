@@ -393,46 +393,55 @@ function parseSubtitles(subtitlesText: string) {
   cleanedText = cleanedText.replace(/\\r\\n/g, '\n');
   cleanedText = cleanedText.replace(/\\n/g, '\n');
   
-  // 解析字幕块
-  const subtitleBlocks = cleanedText.split(/\n\s*\n/).filter(block => block.trim());
+  // 处理单行格式（内容和时间戳在同一行）
+  const lines = cleanedText.split('\n');
   const subtitles = [];
+  let currentContent = '';
+  let currentTimeMatch = null;
 
-  for (const block of subtitleBlocks) {
-    const blockLines = block.trim().split(/\r?\n/);
-    if (blockLines.length < 2) continue; // 至少需要2行：时间、内容
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    // 尝试匹配时间戳
+    const timeMatch = line.match(/^(\d{2}:\d{2}:\d{2}[,\.]\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2}[,\.]\d{3})$/);
     
-    let timeLineIndex = 0;
-    let contentStartIndex = 1;
-    
-    // 检查第一行是否为序号
-    const firstLine = blockLines[0].trim();
-    if (!firstLine.match(/^\d+$/)) {
-      // 如果不是序号，则第一行就是时间行
-      timeLineIndex = 0;
-      contentStartIndex = 1;
+    if (timeMatch) {
+      // 如果找到时间戳，且之前有内容，则保存当前字幕
+      if (currentContent && currentTimeMatch) {
+        subtitles.push({
+          id: String(subtitles.length + 1),
+          timestamp: parseTimestamp(currentTimeMatch[1]),
+          time: currentTimeMatch[1].split(/[,\.]/)[0],
+          timeStart: currentTimeMatch[1].split(/[,\.]/)[0],
+          timeEnd: currentTimeMatch[2].split(/[,\.]/)[0],
+          speaker: '',
+          content: currentContent.trim(),
+        });
+      }
+      // 更新当前时间戳
+      currentTimeMatch = timeMatch;
+      currentContent = '';
     } else {
-      // 如果是序号，则第二行是时间行
-      timeLineIndex = 1;
-      contentStartIndex = 2;
+      // 如果不是时间戳，则添加到当前内容
+      if (currentContent) {
+        currentContent += '\n' + line;
+      } else {
+        currentContent = line;
+      }
     }
-    
-    // 检查时间行格式
-    const timeLine = blockLines[timeLineIndex].trim();
-    const timeMatch = timeLine.match(/^(\d{2}:\d{2}:\d{2}[,\.]\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2}[,\.]\d{3})/);
-    if (!timeMatch) continue; // 必须有正确的时间格式
-    
-    // 获取内容
-    const content = blockLines.slice(contentStartIndex).join('\n').trim();
-    if (!content) continue; // 必须有内容
-    
+  }
+
+  // 处理最后一个字幕
+  if (currentContent && currentTimeMatch) {
     subtitles.push({
-      id: firstLine.match(/^\d+$/) ? firstLine : String(subtitles.length + 1),
-      timestamp: parseTimestamp(timeMatch[1]),
-      time: timeMatch[1].split(/[,\.]/)[0],
-      timeStart: timeMatch[1].split(/[,\.]/)[0],
-      timeEnd: timeMatch[2].split(/[,\.]/)[0],
+      id: String(subtitles.length + 1),
+      timestamp: parseTimestamp(currentTimeMatch[1]),
+      time: currentTimeMatch[1].split(/[,\.]/)[0],
+      timeStart: currentTimeMatch[1].split(/[,\.]/)[0],
+      timeEnd: currentTimeMatch[2].split(/[,\.]/)[0],
       speaker: '',
-      content: content,
+      content: currentContent.trim(),
     });
   }
 
